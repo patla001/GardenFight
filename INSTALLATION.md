@@ -63,8 +63,8 @@ These packages are automatically installed when you open the project:
 
 #### Option A: Clone from Git
 ```bash
-git clone https://github.com/YOUR_USERNAME/Fighting-Game-3d-Multiplayer-Unity3d.git
-cd Fighting-Game-3d-Multiplayer-Unity3d
+git clone https://github.com/patla001/GardenFight.git
+cd GardenFight
 ```
 
 #### Option B: Download ZIP
