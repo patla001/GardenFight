@@ -8,6 +8,39 @@ The game Fight is a 3d multiplayer game. This game is built upon the Unity3d gam
 **App Link Android**: [https://drive.google.com/file/d/1o6oKv7AC4TTkxTvRxYuknuteEUVRiXjj/view?usp=sharing](https://drive.google.com/file/d/1o6oKv7AC4TTkxTvRxYuknuteEUVRiXjj/view?usp=sharing)  
 **App Link Windows**: [https://drive.google.com/file/d/148Ig8l-EgBYXaxaMr7MRjwNoB6adUope/view?usp=sharing](https://drive.google.com/file/d/148Ig8l-EgBYXaxaMr7MRjwNoB6adUope/view?usp=sharing)
 
+## Updated to Unity 6
+This project has been updated from Unity 2019.1.8f1 to **Unity 6000.2.2f1** (Unity 6.2) with modern networking using **Mirror Networking**.
+
+### Requirements
+- **Unity Version**: 6000.2.2f1 or later (Unity 6.2 recommended)
+- **Mirror Networking**: Version 96.8.5 or later
+- **TextMeshPro**: Version 3.0.9 or later
+
+### 📥 Installation
+For detailed installation instructions, please see **[INSTALLATION.md](INSTALLATION.md)**
+
+### Quick Start
+1. Install Unity 6000.2.2f1 (Unity 6.2)
+2. Download [Mirror v96.8.5](https://github.com/MirrorNetworking/Mirror/releases/download/v96.8.5/Mirror-96.8.5.unitypackage)
+3. Open the project in Unity
+4. Import Mirror package: `Assets → Import Package → Custom Package`
+5. Import TextMeshPro essentials: `Window → TextMeshPro → Import TMP Essential Resources`
+6. Open `Assets/Scenes/FightScene.unity`
+7. Press Play and click "Host" to start
+
+For complete setup instructions, troubleshooting, and build guides, see **[INSTALLATION.md](INSTALLATION.md)**
+
+### What's New in Unity 6 Update
+- **Unity Engine**: Updated from 2019.1.8f1 to Unity 6000.2.2f1 (Unity 6.2)
+- **Networking**: Migrated from deprecated Unity UNET to Mirror Networking v96.8.5
+- **Packages**: Updated all packages to Unity 6 compatible versions
+- **Scripts**: Updated all networking scripts to use Mirror namespace and APIs
+- **Discovery**: Implemented custom `SimpleNetworkDiscovery` using Mirror's discovery system
+- **Transport**: Using KCP Transport for reliable networking
+- **Prefabs**: Updated player prefabs with `NetworkIdentity` components
+- **API Updates**: Replaced deprecated Unity APIs (e.g., `FindObjectOfType` → `FindFirstObjectByType`)
+- **Build Support**: Tested and working on Windows, macOS, and Android platforms
+
 # Platforms: Android, Windows
 The currently supported platforms for this game are both Android and Windows. Cross play between Android and Windows is also available.
 
@@ -16,7 +49,7 @@ Fight is a 3d, third person, multiplayer, one vs one fighting game. In this game
 
 # Game Description
 The main focus of this game is the Multiplayer system so that player can fight another real player (most likely friend!) and not an unsmart AI. The fight happens in an enclosed arena. After a math finishes the defeated player can request a rematch to the other player. Here are some key components of the game-
-- **Multiplayer**: We have used the built in UNet library to achieve the multiplayer functionality. There are some other networking libraries like photon, bolt etc. But we decided to go with the Unet because it has the most resource.
+- **Multiplayer**: We use Mirror Networking (formerly UNet) to achieve the multiplayer functionality. Mirror is the community-supported continuation of Unity's deprecated UNET system, providing reliable and feature-rich networking for multiplayer games.
 - **Arena**:  
 <img src="Demo/arena.png" width="400"> <img src="Demo/2_player.png" width="400"> 
 -	**Character**:  
@@ -54,4 +87,60 @@ User can also click the CANCEL button and go back to the home screen.
 -	**Android**: The joystick on the left side on screen is used for moving the character up-down, left-right. And the icons on the right side perform the corresponding actions shown by the icons. Shield icon to bring in/out the shield, switch icon to switch the weapon, sword, or fist icon to attack the opponent, jump icon for jumping and magic icon to shoot fireball.
 -	**Windows**: WASD is used for moving the character. F for shooting magic fireball, up-arrow for weapon switching, left arrow to bring in/out shield, down arrow for jumping and right arrow is for attacking.
 
+---
+
+## 📚 Documentation
+
+### Installation & Setup
+- **[INSTALLATION.md](INSTALLATION.md)** - Complete installation guide with step-by-step instructions
+  - System requirements
+  - Dependency installation
+  - Project setup
+  - Building for different platforms
+  - Troubleshooting guide
+
+### Project Information
+- **Unity Version**: 6000.2.2f1 (Unity 6.2)
+- **Networking**: Mirror v96.8.5
+- **Main Scene**: `Assets/Scenes/FightScene.unity`
+- **Player Prefab**: `Assets/Prefabs/RPG-Character Variant.prefab`
+
+---
+
+## 🛠️ Developer Tools
+
+The project includes several helpful Unity Editor tools:
+
+- **Tools → Setup NetworkManager in Scene** - Automatically configures NetworkManager
+- **Tools → Fix Player Prefabs Now** - Fixes prefabs and adds NetworkIdentity
+- **Tools → Cleanup Missing Scripts in Scene** - Removes broken script references
+- **Tools → Quick Fix - Add Transport to NetworkManager** - Adds transport component
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! If you find bugs or have suggestions:
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
+
+---
+
+## 📄 License
+
+This project uses:
+- **Unity Engine** - Personal/Plus/Pro License
+- **Mirror Networking** - MIT License
+- **RPG Character Animation Pack FREE** - Unity Asset Store License
+
+---
+
+## 🙏 Credits
+
+- **Original UNET Version**: [Previous contributors]
+- **Unity 6 Migration**: Updated to Unity 6000.2.2f1 with Mirror Networking
+- **Assets**: RPG Character Animation Pack FREE from Unity Asset Store
+- **Networking**: Mirror Networking by vis2k and contributors
 

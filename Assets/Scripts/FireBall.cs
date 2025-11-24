@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Networking;
+using Mirror;
 
 public class FireBall : MonoBehaviour
 {
@@ -25,7 +25,7 @@ public class FireBall : MonoBehaviour
         if (other.transform.root.name == transform.root.name)
             return;
 
-        GetComponent<Rigidbody>().velocity = Vector3.zero;
+        GetComponent<Rigidbody>().linearVelocity = Vector3.zero;
         GameObject tempExplosion = Instantiate(explosion, transform.position, Quaternion.identity);
         Destroy(this.gameObject, destroyDelay);
 

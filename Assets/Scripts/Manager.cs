@@ -1,5 +1,5 @@
 ﻿using UnityEngine;
-using UnityEngine.Networking;
+using Mirror;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.UI;
@@ -174,6 +174,8 @@ public class Manager : MonoBehaviour
 
     public void Unsheath()
     {
+        if (localPlayer == null || animator == null) return;
+        
         currentAttackCount = 0;
         //animator.ResetTrigger("Attacking");
         UnguardIfGuarded();
@@ -187,6 +189,8 @@ public class Manager : MonoBehaviour
 
     public void Sheath()
     {
+        if (localPlayer == null || animator == null) return;
+        
         currentAttackCount = 0;
         UnguardIfGuarded();
         animator.SetBool("Armed", false);
@@ -199,6 +203,8 @@ public class Manager : MonoBehaviour
 
     public void Attack()
     {
+        if (localPlayer == null || animator == null) return;
+        
         currentAttackCount++;
         UnguardIfGuarded();
         animator.SetInteger("AttackNO", Random.Range(1, 6));
@@ -210,6 +216,8 @@ public class Manager : MonoBehaviour
 
     public void Jump()
     {
+        if (localPlayer == null) return;
+        
         currentAttackCount = 0;
         localPlayer.GetComponent<PlayerMovement>().Jump();
         UnguardIfGuarded();
@@ -219,6 +227,8 @@ public class Manager : MonoBehaviour
 
     public void Guard()
     {
+        if (localPlayer == null || animator == null) return;
+        
         currentAttackCount = 0;
         animator.SetBool("IsBlocking", true);
         isGuarding = true;
@@ -228,6 +238,8 @@ public class Manager : MonoBehaviour
 
     public void Unguard()
     {
+        if (localPlayer == null || animator == null) return;
+        
         currentAttackCount = 0;
         animator.SetBool("IsBlocking", false);
         isGuarding = false;
@@ -265,6 +277,13 @@ public class Manager : MonoBehaviour
 
     public void ShootFireBall()
     {
+        // Don't execute if player hasn't spawned yet
+        if (localPlayer == null || networkAnimator == null)
+        {
+            Debug.LogWarning("Cannot shoot fireball - player not ready yet!");
+            return;
+        }
+        
         //actionControl.Shoot(localId);
         //animator.SetTrigger("Magic");
         networkAnimator.SetTrigger("Magic");

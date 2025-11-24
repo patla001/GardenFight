@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
-using UnityEngine.Networking;
+using Mirror;
 using TMPro;
 
 public class Player : NetworkBehaviour
@@ -52,8 +52,8 @@ public class Player : NetworkBehaviour
         animator = GetComponent<Animator>();
         networkAnimator = GetComponent<NetworkAnimator>();
         audioManager = GetComponent<AudioManager>();
-        //camShake = FindObjectOfType<Shake>();
-        manager = FindObjectOfType<Manager>();
+        //camShake = FindFirstObjectByType<Shake>();
+        manager = FindFirstObjectByType<Manager>();
         playerMovement = GetComponent<PlayerMovement>();
         shootAnimator = manager.shootAnimator;
 

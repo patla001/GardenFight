@@ -1,11 +1,12 @@
 ﻿using UnityEngine;
 using System.Collections;
-using UnityEngine.Networking;
+using Mirror;
+using Mirror.Discovery;
 using System;
 
 public class MyNetManager : NetworkManager
 {
-	public NetworkDiscovery discovery;
+	public SimpleNetworkDiscovery discovery;
     public GameObject HostButton;
     public GameObject JoinButton;
     public GameObject CancelButton;
@@ -20,27 +21,40 @@ public class MyNetManager : NetworkManager
 
     public override void OnStartHost()
 	{
-		discovery.Initialize();
-		discovery.StartAsServer();
-
+		base.OnStartHost();
+		if (discovery != null)
+		{
+			discovery.AdvertiseServer();
+		}
+	}
+    
+    public override void OnStartServer()
+    {
+        base.OnStartServer();
+        if (discovery != null && NetworkServer.active)
+        {
+            discovery.AdvertiseServer();
+        }
 	}
 
-    public override void OnClientDisconnect(NetworkConnection conn)
+    public override void OnClientDisconnect()
     {
         StopClient();
         print("Client is disconnected");
     }
 
-    public override void OnStartClient(NetworkClient client)
+    public override void OnStartClient()
     {
-        discovery.showGUI = false;
+        base.OnStartClient();
         HideUI();
 	}
 
     public override void OnStopClient()
     {
-        discovery.StopBroadcast();
-		discovery.showGUI = true;
+		if (discovery != null)
+		{
+			discovery.StopDiscovery();
+		}
         ResetUI();
 	}
 
@@ -57,7 +71,7 @@ public class MyNetManager : NetworkManager
         try
         {
             StartHost();
-        } catch(Exception e)
+        } catch(Exception)
         {
             print("The port is occupied");
         }
@@ -66,8 +80,10 @@ public class MyNetManager : NetworkManager
     public void StartJoinRequest()
     {
         state = "Joining";
-        discovery.Initialize();
-        discovery.StartAsClient();
+        if (discovery != null)
+        {
+            discovery.StartDiscovery();
+        }
     }
 
     public void HideUI()
@@ -108,7 +124,10 @@ public class MyNetManager : NetworkManager
         yield return new WaitForSeconds(.75f);
         if (state == "Joining")
         {
-            discovery.StopBroadcast();
+            if (discovery != null)
+            {
+                discovery.StopDiscovery();
+            }
         }
         else
         {

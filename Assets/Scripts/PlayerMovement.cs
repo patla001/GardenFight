@@ -58,10 +58,10 @@ public class PlayerMovement : MonoBehaviour
     void Start()
     {
         selfRotationSpeed = rotationStartSpeed;
-        pcInput = FindObjectOfType<Manager>().pcInput;
+        pcInput = FindFirstObjectByType<Manager>().pcInput;
         if (!pcInput)
         {
-            joystick = FindObjectOfType<Manager>().joystick.GetComponent<Joystick>();
+            joystick = FindFirstObjectByType<Manager>().joystick.GetComponent<Joystick>();
             joystick.gameObject.SetActive(true);
         }
         animator = GetComponent<Animator>();
