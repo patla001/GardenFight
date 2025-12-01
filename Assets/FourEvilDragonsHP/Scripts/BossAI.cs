@@ -1,14 +1,22 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.AI;
+using Mirror;
 
-public class BossAI : MonoBehaviour
+public class BossAI : NetworkBehaviour
 {
+    [Header("References")]
     public Transform player;
+    public BulletHell bulletHell;
 
+    [Header("AI Settings")]
     public float detectionRadius = 20f;
     public float attackRadius = 3f;
     public float roamRadius = 5f;
     public float roamDelay = 4f;
+
+    [Header("Bullet Hell Settings")]
+    public float ringCooldown = 30f; // seconds between full ring sequences
+    private float lastRingTime = -Mathf.Infinity;
 
     private NavMeshAgent agent;
     private Vector3 startPosition;
@@ -17,29 +25,32 @@ public class BossAI : MonoBehaviour
     private enum BossState { Idle, Roam, Chase, Attack }
     private BossState state = BossState.Idle;
 
-    void Start()
+    #region Unity Methods
+    public override void OnStartServer()
     {
+        base.OnStartServer();
+
         agent = GetComponent<NavMeshAgent>();
+        if (bulletHell == null)
+            bulletHell = GetComponent<BulletHell>();
+
         startPosition = transform.position;
         roamTimer = roamDelay;
     }
 
     void Update()
     {
+        if (!isServer) return; // Only the server controls AI
+
         if (player == null)
         {
             GameObject p = GameObject.FindGameObjectWithTag("Player");
             if (p != null)
-            {
                 player = p.transform;
-            }
             else
-            {
-                return; // no player found yet
-            }
+                return;
         }
 
-        // Normal AI logic continues once player is found...
         float distance = Vector3.Distance(transform.position, player.position);
 
         switch (state)
@@ -50,8 +61,9 @@ public class BossAI : MonoBehaviour
             case BossState.Attack: HandleAttack(distance); break;
         }
     }
+    #endregion
 
-
+    #region AI States
     private void HandleIdle(float distance)
     {
         if (distance <= detectionRadius)
@@ -83,9 +95,7 @@ public class BossAI : MonoBehaviour
         }
 
         if (agent.remainingDistance <= 1f)
-        {
             state = BossState.Idle;
-        }
     }
 
     private void HandleChase(float distance)
@@ -99,23 +109,27 @@ public class BossAI : MonoBehaviour
         agent.SetDestination(player.position);
 
         if (distance <= attackRadius)
-        {
             state = BossState.Attack;
-        }
     }
 
     private void HandleAttack(float distance)
     {
         agent.SetDestination(transform.position); // stop moving
-
         transform.LookAt(player);
 
-        // TODO: Trigger an animation event here
-        Debug.Log("Boss is attacking!");
-
-        if (distance > attackRadius + 2f)
+        if (bulletHell != null && !bulletHell.IsRunning())
         {
-            state = BossState.Chase;
+            // Only fire full sequence if cooldown has passed
+            if (Time.time - lastRingTime >= ringCooldown)
+            {
+                bulletHell.StartRingSequence();
+                lastRingTime = Time.time;
+            }
         }
+
+        // Return to chasing if player backs away
+        if (distance > attackRadius + 2f)
+            state = BossState.Chase;
     }
+    #endregion
 }
