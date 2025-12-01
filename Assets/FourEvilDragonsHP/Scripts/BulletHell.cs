@@ -4,38 +4,38 @@ using System.Collections;
 public class BulletHell : MonoBehaviour
 {
     [Header("Ring Radii")]
-    public float innerRadius = 3f;
-    public float middleRadius = 6f;
-    public float outerRadius = 9f;
+    public float innerRadius = 3f; // radius for inner ring
+    public float middleRadius = 6f; // radius for middle ring
+    public float outerRadius = 9f; // radius for outer ring
 
     [Header("Damage Settings")]
-    public int damage = 20;                     // matches Player.TakeDamage(int damage, string type)
-    public string damageType = "Magic";         // can be "Magic", "Sword", or "Fist"
-    public LayerMask playerLayer;               // set this to the Player layer
-    public float delayBetweenWaves = 1.5f;
+    public int damage = 20; // amount of damage dealt to player
+    public string damageType = "Magic"; // type of damage can be magic sword or fist
+    public LayerMask playerLayer; // layer mask to detect player
+    public float delayBetweenWaves = 1.5f; // delay between waves
 
     [Header("Visuals (optional)")]
-    public GameObject ringPrefab;
-    public float ringVisualDuration = 1.4f;
+    public GameObject ringPrefab; // prefab for ring visuals
+    public float ringVisualDuration = 1.4f; // how long visuals last
 
-    private bool running = false;
+    private bool running = false; // track if sequence is running
 
     public bool IsRunning()
     {
-        return running;
+        return running; // return current running state
     }
 
     public void StartRingSequence()
     {
-        if (!running)
+        if (!running) // only start if not already running
             StartCoroutine(RingSequence());
     }
 
     private IEnumerator RingSequence()
     {
-        running = true;
+        running = true; // mark as running
 
-        // Optional visuals
+        // optional visuals
         GameObject outerVis = null, midVis = null, innerVis = null;
         if (ringPrefab != null)
         {
@@ -44,36 +44,36 @@ public class BulletHell : MonoBehaviour
             innerVis = InstantiateRing(innerRadius);
         }
 
-        // WAVE 1 → Outer safe
+        // wave 1 outer safe
         DoWave(safeRing: 3);
         UpdateRingVisuals(ref outerVis, ref midVis, ref innerVis, safeRing: 3);
         yield return new WaitForSeconds(delayBetweenWaves);
 
-        // WAVE 2 → Middle safe
+        // wave 2 middle safe
         DoWave(safeRing: 2);
         UpdateRingVisuals(ref outerVis, ref midVis, ref innerVis, safeRing: 2);
         yield return new WaitForSeconds(delayBetweenWaves);
 
-        // WAVE 3 → Inner safe
+        // wave 3 inner safe
         DoWave(safeRing: 1);
         UpdateRingVisuals(ref outerVis, ref midVis, ref innerVis, safeRing: 1);
         yield return new WaitForSeconds(delayBetweenWaves);
 
-        // Destroy visuals
+        // destroy visuals after sequence
         if (outerVis != null) Destroy(outerVis, ringVisualDuration);
         if (midVis != null) Destroy(midVis, ringVisualDuration);
         if (innerVis != null) Destroy(innerVis, ringVisualDuration);
 
-        running = false;
+        running = false; // mark as finished
     }
 
     private void DoWave(int safeRing)
     {
-        if (safeRing != 1) DamageRing(innerRadius);
-        if (safeRing != 2) DamageRing(middleRadius);
-        if (safeRing != 3) DamageRing(outerRadius);
+        if (safeRing != 1) DamageRing(innerRadius); // damage inner if not safe
+        if (safeRing != 2) DamageRing(middleRadius); // damage middle if not safe
+        if (safeRing != 3) DamageRing(outerRadius); // damage outer if not safe
 
-        Debug.Log("BulletHell: Wave fired. Safe ring: " + safeRing);
+        Debug.Log("BulletHell: wave fired safe ring " + safeRing);
     }
 
     private void DamageRing(float radius)
@@ -87,7 +87,7 @@ public class BulletHell : MonoBehaviour
             float dist = Vector3.Distance(transform.position, hit.transform.position);
             if (dist >= radius - ringWidth * 0.5f && dist <= radius + ringWidth * 0.5f)
             {
-                // call your Player.TakeDamage
+                // call player damage
                 Player player = hit.GetComponent<Player>();
                 if (player != null)
                 {
@@ -96,7 +96,7 @@ public class BulletHell : MonoBehaviour
             }
         }
 
-        DebugDrawRing(radius, Color.red, 1f);
+        DebugDrawRing(radius, Color.red, 1f); // draw debug ring
     }
 
     #region Visual Helpers
@@ -128,8 +128,8 @@ public class BulletHell : MonoBehaviour
     #region Debug
     private void DebugDrawRing(float radius, Color color, float duration)
     {
-        int segments = 60;
-        float step = 360f / segments;
+        int segments = 60; // number of segments for circle
+        float step = 360f / segments; // angle step
 
         for (int i = 0; i < segments; i++)
         {
@@ -139,7 +139,7 @@ public class BulletHell : MonoBehaviour
             Vector3 p1 = transform.position + new Vector3(Mathf.Cos(a1), 0, Mathf.Sin(a1)) * radius;
             Vector3 p2 = transform.position + new Vector3(Mathf.Cos(a2), 0, Mathf.Sin(a2)) * radius;
 
-            Debug.DrawLine(p1, p2, color, duration);
+            Debug.DrawLine(p1, p2, color, duration); // draw line between points
         }
     }
     #endregion
