@@ -79,6 +79,7 @@ The game features a variety of things. Here are some of the most noticeable feat
 -	**Screen shake**: The screen shakes while being attacked by the opponent. It makes the game punchier and alive.
 -	**Victory dance**: After winning a fight the victorious player starts dancing.
 -	**Cross play**: Android user and windows user can also fight each other by connecting via Wi-Fi hotspot.
+-	**NEW: Boss Fight**: Boss fight, player can fight a dark souls style boss.
 
 # User Manual
 ## Getting Started
