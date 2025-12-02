@@ -49,7 +49,16 @@ public class PlayerSetup : NetworkBehaviour
             sceneCamera = Camera.main;
             if (sceneCamera != null)
             {
-                sceneCamera.gameObject.SetActive(false);
+                // Make sure camera has CameraMovement script
+                CameraMovement camMovement = sceneCamera.GetComponent<CameraMovement>();
+                if (camMovement == null)
+                {
+                    camMovement = sceneCamera.gameObject.AddComponent<CameraMovement>();
+                    Debug.Log("Added CameraMovement script to Main Camera");
+                }
+                
+                // Camera will now follow this player via CameraMovement script
+                Debug.Log("Camera set up to follow local player");
             }
             
         }
