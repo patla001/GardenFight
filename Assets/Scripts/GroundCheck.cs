@@ -33,8 +33,11 @@ public class GroundCheck : MonoBehaviour
         if (other.tag == "Ground")
         {
             isGrounded = false;
-            if (otherGroundCHeck.isGrounded != false)
+            
+            // Check if otherGroundCHeck exists before accessing it
+            if (otherGroundCHeck != null && otherGroundCHeck.isGrounded != false)
                 return;
+            
             playerMovement.isGrounded = false;
             animator.SetBool("IsGrounded", false);
         }

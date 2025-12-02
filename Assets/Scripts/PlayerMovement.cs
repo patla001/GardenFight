@@ -66,6 +66,10 @@ public class PlayerMovement : MonoBehaviour
         }
         animator = GetComponent<Animator>();
         rb = GetComponent<Rigidbody>();
+        
+        // Ensure player starts as grounded
+        isGrounded = true;
+        
         //animator.SetFloat("Speed", speed);
     }
 
@@ -85,6 +89,9 @@ public class PlayerMovement : MonoBehaviour
 
         SmoothInput();
         
+        // Backup ground check using raycast (in case GroundCheck triggers don't work)
+        CheckGroundWithRaycast();
+        
         if (oponent != null)
         {
             //oponentDistance = Vector3.Distance(transform.position, oponent.position);
@@ -100,11 +107,59 @@ public class PlayerMovement : MonoBehaviour
         //if(canMove) MovePlayer();
 
     }
+    
+    void CheckGroundWithRaycast()
+    {
+        // Cast a ray downward to check if we're on ground
+        RaycastHit hit;
+        Vector3 rayOrigin = transform.position + Vector3.up * 0.1f;
+        
+        if (Physics.Raycast(rayOrigin, Vector3.down, out hit, 0.3f))
+        {
+            if (hit.collider.CompareTag("Ground"))
+            {
+                if (!isGrounded && !isJumping)
+                {
+                    isGrounded = true;
+                    if (animator != null)
+                    {
+                        animator.SetBool("IsGrounded", true);
+                        animator.applyRootMotion = true;
+                    }
+                }
+                
+                // Reset jumping state when grounded
+                if (isJumping && rb.linearVelocity.y <= 0.1f)
+                {
+                    isJumping = false;
+                    if (animator != null)
+                        animator.SetBool("IsJumping", false);
+                }
+            }
+        }
+        else
+        {
+            // Not touching ground
+            if (isGrounded && !isJumping)
+            {
+                isGrounded = false;
+                if (animator != null)
+                    animator.SetBool("IsGrounded", false);
+            }
+        }
+    }
 
     public void Jump()
     {
+        Debug.Log($"Jump called! isGrounded: {isGrounded}, isJumping: {isJumping}");
+        
         if (!isGrounded || isJumping)
+        {
+            Debug.LogWarning($"Can't jump! isGrounded: {isGrounded}, isJumping: {isJumping}");
             return;
+        }
+        
+        Debug.Log("JUMPING!");
         isJumping = true;
         jumpForce = (new Vector3(HInput * jumpDashForce, jumpUpForce, VInput * jumpDashForce).normalized)*airSpeedMultiplier;
         animator.applyRootMotion = false;

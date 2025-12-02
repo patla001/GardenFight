@@ -40,6 +40,7 @@ For complete setup instructions, troubleshooting, and build guides, see **[INSTA
 - **Prefabs**: Updated player prefabs with `NetworkIdentity` components
 - **API Updates**: Replaced deprecated Unity APIs (e.g., `FindObjectOfType` → `FindFirstObjectByType`)
 - **Build Support**: Tested and working on Windows, macOS, and Android platforms
+- **Garden Arena**: Added beautiful garden-themed fighting arena with custom materials, animated water effects, and optimized collision system
 
 # Platforms: Android, Windows
 The currently supported platforms for this game are both Android and Windows. Cross play between Android and Windows is also available.
@@ -52,6 +53,13 @@ The main focus of this game is the Multiplayer system so that player can fight a
 - **Multiplayer**: We use Mirror Networking (formerly UNet) to achieve the multiplayer functionality. Mirror is the community-supported continuation of Unity's deprecated UNET system, providing reliable and feature-rich networking for multiplayer games.
 - **Arena**:  
 <img src="Demo/arena.png" width="400"> <img src="Demo/2_player.png" width="400"> 
+- **Garden Arena**: The game now features a beautiful garden-themed arena with:
+  - Lush green grass ground
+  - Stone pathways for strategic movement
+  - Colorful flower beds as decorative obstacles
+  - Animated water pond with shimmer effects
+  - All surfaces are fully walkable and jumpable
+  - Optimized for combat with open space and visual appeal
 -	**Character**:  
 ![](Demo/player.png)
 -	**Animations**: The character is fully animated for all kinds of situation. Animations make a game feels more alive and dynamic.
@@ -104,6 +112,8 @@ User can also click the CANCEL button and go back to the home screen.
 - **Networking**: Mirror v96.8.5
 - **Main Scene**: `Assets/Scenes/FightScene.unity`
 - **Player Prefab**: `Assets/Prefabs/RPG-Character Variant.prefab`
+- **Arena Materials**: `Assets/Materials/Garden_*.mat` (6 custom garden-themed materials)
+- **Arena Scripts**: `Assets/Scripts/GardenWaterShimmer.cs` (water animation effects)
 
 ---
 
