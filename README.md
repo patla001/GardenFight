@@ -1,6 +1,6 @@
 # GARDEN FIGHT!
 <p align="center">
-  <img width="300" height="300" src="Demo/icon.png"><img width="1024" height="1536" alt="image" src="https://github.com/user-attachments/assets/652e65d9-2f5b-4a42-88bc-ce1f9f0629ab" />
+  <img width="300" height="300" src="Demo/icon.png"><img width="300" height="300" alt="image" src="https://github.com/user-attachments/assets/652e65d9-2f5b-4a42-88bc-ce1f9f0629ab" />
 
 </p>
 
