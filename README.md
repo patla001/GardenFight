@@ -1,12 +1,13 @@
-# FIGHT!
+# GARDEN FIGHT!
 <p align="center">
   <img width="300" height="300" src="Demo/icon.png">
 </p>
 
 # Introduction
-The game Fight is a 3d multiplayer game. This game is built upon the Unity3d game engine. The objective of this game is to fight the opponent and win.  
-**App Link Android**: [https://drive.google.com/file/d/1o6oKv7AC4TTkxTvRxYuknuteEUVRiXjj/view?usp=sharing](https://drive.google.com/file/d/1o6oKv7AC4TTkxTvRxYuknuteEUVRiXjj/view?usp=sharing)  
-**App Link Windows**: [https://drive.google.com/file/d/148Ig8l-EgBYXaxaMr7MRjwNoB6adUope/view?usp=sharing](https://drive.google.com/file/d/148Ig8l-EgBYXaxaMr7MRjwNoB6adUope/view?usp=sharing)
+The game is Garden Fight. This game is built upon the Unity3d game engine, built upon a 3d multiplayer game called Fight. The objective of this game is to fight the boss and win. You are defending your garden from the boss. Protect it at all costs!
+
+# Introduction
+- **Group Members**: Ethan Kent, Evan Tardiff, Ezer Patlan, Saqwon Williams
 
 ## Updated to Unity 6
 This project has been updated from Unity 2019.1.8f1 to **Unity 6000.2.2f1** (Unity 6.2) with modern networking using **Mirror Networking**.
@@ -46,11 +47,12 @@ For complete setup instructions, troubleshooting, and build guides, see **[INSTA
 The currently supported platforms for this game are both Android and Windows. Cross play between Android and Windows is also available.
 
 # Game Overview
-Fight is a 3d, third person, multiplayer, one vs one fighting game. In this game one can only fight another real player and not AI. Players connects via Wi-Fi hotspot and then fight each other to death!
+Fight is a 3d, third person, multiplayer, one vs one fighting game. Garden Fight is a sub game of Fight, adding elements from Fight and adding a dark souls style boss that you can fight. In game, you must protect your garden by fighting the boss AI without dying!
 
 # Game Description
-The main focus of this game is the Multiplayer system so that player can fight another real player (most likely friend!) and not an unsmart AI. The fight happens in an enclosed arena. After a math finishes the defeated player can request a rematch to the other player. Here are some key components of the game-
-- **Multiplayer**: We use Mirror Networking (formerly UNet) to achieve the multiplayer functionality. Mirror is the community-supported continuation of Unity's deprecated UNET system, providing reliable and feature-rich networking for multiplayer games.
+Previously, Fight focused on the Multiplayer System so that the player can fight another real player and not AI. Garden Fight focuses on battling a boss AI similarly to dark souls. You, the player, are defending their garden from the attacking creatues. Blue has invaded your garden, and threatens to wreak irreparable damage if left alive. Your job is to defeat him and bring peace to your garden. The boss has certain mechanics that you must work through in order to live and defeat the boss. The boss has several unique and challening mechanics such as projectiles you must dodge, rings you must dodge and find safe spots for, and physical attacks when in close proximity to the boss. Garden Fight builds upon Fight's core mechanics and changes the focus from other players to the threat attacking your garden.
+
+- **Multiplayer**: We use Mirror Networking (formerly UNet) to maintain the multiplayer functionality. Mirror is the community-supported continuation of Unity's deprecated UNET system, providing reliable and feature-rich networking for multiplayer games.
 - **Arena**:  
 <img src="Demo/arena.png" width="400"> <img src="Demo/2_player.png" width="400"> 
 - **Garden Arena**: The game now features a beautiful garden-themed arena with:
@@ -66,9 +68,9 @@ The main focus of this game is the Multiplayer system so that player can fight a
 
 # Game Features
 The game features a variety of things. Here are some of the most noticeable features-
--	**Hotspot multiplayer**: After connecting two devices via Wi-Fi hotspot, players can fight each other in real time.
--	**Health bar**: Each player has its own health, after the health reaches to 0, the player loses.
--	**Ratio**: The number of wins and loses so far are shown on the home screen. The ratio between wins and loses is shown during the fight under the Health Bar.
+-	**Hotspot multiplayer**: After connecting two devices via Wi-Fi hotspot, players can fight each other in real time **(DEPRECATED)**.
+-	**Health bar**: The player and boss has its own health, after the health reaches to 0, the player loses.
+-	**Ratio**: The number of wins and loses so far are shown on the home screen. The ratio between wins and loses is shown during the fight under the Health Bar **(DEPRECATED)**.
 -	**Movement**: Player can move around freely in any direction. But the looking direction is restricted due to multiplayer complexity. During a fight player will always look at the opponent.
 -	**Jump**: Player can jump in any direction.
 -	**Shield**: Player can protect themselves with a wooden shield.
@@ -77,11 +79,10 @@ The game features a variety of things. Here are some of the most noticeable feat
 -	**Sounds**: There are all kinds of sounds present in the game. These sounds make the game more natural. Sounds can be switched on or off.
 -	**Particle effects**: Particle effects make a game more stunning and appealing to the player. Blood splash, explosion and some other particle effects are present in this game.
 -	**Screen shake**: The screen shakes while being attacked by the opponent. It makes the game punchier and alive.
--	**Victory dance**: After winning a fight the victorious player starts dancing.
--	**Cross play**: Android user and windows user can also fight each other by connecting via Wi-Fi hotspot.
+-	**Cross play**: Android user and windows user can also fight each other by connecting via Wi-Fi hotspot **(DEPRECATED)**.
 -	**NEW: Boss Fight**: Boss fight, player can fight a dark souls style boss.
 
-# User Manual
+# User Manual (TAKEN FROM FIGHT)
 ## Getting Started
 For two players to fight each other, both users must be in the same Wi-Fi network. If there is no Wi-Fi in the area, then any one of the users must turn his device’s hotspot on and let the other user connect to that hotspot. It is required to have a stable connection between the two devices. Now the users can both open the game in their corresponding devices.  
 After the game opens, in the home screen there will be two buttons. One is HOST and the other is JOIN.  
@@ -154,4 +155,32 @@ This project uses:
 - **Unity 6 Migration**: Updated to Unity 6000.2.2f1 with Mirror Networking
 - **Assets**: RPG Character Animation Pack FREE from Unity Asset Store
 - **Networking**: Mirror Networking by vis2k and contributors
+
+## Current Target for the Game
+Garden Fight is a game built upon Fight, a 3d multiplayer combat arena game, but instead focuses on you, the player, fighting a boss. We are aiming toward a bullet hell dark souls style boss that you can fight user the human controlled player. We are aiming to add interactive mechanics and bullet hell to the boss to make the boss fight more engaging and challenging. As we add more elements to the boss, we can separate the boss into different difficulties with each difficulty having different mechanics, the easier difficulty have less than the hardest. Garden Fight will keep the core attacking and defending mechanics found and used from Fight.
+
+## General Goals for Each Member
+* note that these goals are tentative and different roles can be swapped around
+**Ethan Kent**
+- Create a new Boss AI
+- Implement different styles of bullet hell
+- Separate difficulties from the boss
+- Implement boss phases
+- Update README and "story"/theme
+
+**Evan Tardiff**
+- Manage human controlled player mechanics
+- Manage simple boss attack mechanics
+- Handle boss animation
+
+**Ezer Patlan**
+- Port Fight from Unity 2019.1.8f1 to Unity 6000.2.2f1 (Unity 6.2) with modern networking
+- Create a new arena to fit the garden theme
+- Habdle new art assets
+- Handle animations
+
+**Saqwon Williams**
+- Manage and implement health system for player and boss
+- Manage damage system for player and boss
+- Manage damage animations for player and boss
 
