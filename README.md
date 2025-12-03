@@ -162,6 +162,7 @@ Garden Fight is a game built upon Fight, a 3d multiplayer combat arena game, but
 
 ## General Goals for Each Member
 * note that these goals are tentative and different roles can be swapped around
+  
 **Ethan Kent**
 - Create a new Boss AI
 - Implement different styles of bullet hell
