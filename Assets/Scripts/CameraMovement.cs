@@ -43,7 +43,9 @@ public class CameraMovement : MonoBehaviour
         
         while (elapsed < timeout)
         {
-            GameObject localPlayer = GameObject.Find("local player");
+            //Changed to find Game Object with Tag so the player can be found
+            GameObject localPlayer = GameObject.FindGameObjectWithTag("Player");
+
             if (localPlayer != null)
             {
                 player = localPlayer.transform;
@@ -58,23 +60,44 @@ public class CameraMovement : MonoBehaviour
         Debug.LogWarning("Camera could not find 'local player' after 5 seconds");
     }
 
-    // Update is called once per frame
+    //// Update is called once per frame
+    //void Update()
+    //{
+    //    if (player == null) return; // Don't do anything if no player found
+
+    //    // Follow player with offset
+    //    transform.position = player.position + offset;
+
+    //    // Optional rotation around player
+    //    if (enableRotation)
+    //    {
+    //        transform.RotateAround(player.position, player.transform.up, rotationSpeed * Time.deltaTime);
+    //    }
+    //    else
+    //    {
+    //        // Look at player
+    //        transform.LookAt(player.position + Vector3.up * 2); // Look at player's upper body
+    //    }
+    //}
+
     void Update()
     {
-        if (player == null) return; // Don't do anything if no player found
-        
-        // Follow player with offset
-        transform.position = player.position + offset;
-        
-        // Optional rotation around player
+        if (player == null) return;
+
+        // Rotate offset based on the player's rotation
+        Vector3 rotatedOffset = player.rotation * offset;
+
+        // Follow behind player with rotated offset
+        transform.position = player.position + rotatedOffset;
+
+        // Always look at the player
+        transform.LookAt(player.position + Vector3.up * 2f);
+
+        // Optional rotation mode
         if (enableRotation)
         {
-            transform.RotateAround(player.position, player.transform.up, rotationSpeed * Time.deltaTime);
-        }
-        else
-        {
-            // Look at player
-            transform.LookAt(player.position + Vector3.up * 2); // Look at player's upper body
+            transform.RotateAround(player.position, Vector3.up, rotationSpeed * Time.deltaTime);
         }
     }
+
 }
