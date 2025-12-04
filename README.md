@@ -172,6 +172,7 @@ Garden Fight is a game built upon Fight, a 3d multiplayer combat arena game, but
 - Manage human controlled player mechanics
 - Manage simple boss attack mechanics
 - Handle boss animation
+- Change the main menu from "Host" and "Join" options to just a "Play" option
 
 **Ezer Patlan**
 - Port Fight from Unity 2019.1.8f1 to Unity 6000.2.2f1 (Unity 6.2) with modern networking
