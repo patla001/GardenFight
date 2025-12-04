@@ -183,5 +183,7 @@ Garden Fight is a game built upon Fight, a 3d multiplayer combat arena game, but
 - Manage and implement health system for player and boss
 - Manage damage system for player and boss
 - Manage damage animations for player and boss
+- Manage sound implementation
+  
 
 >>>>>>> Stashed changes
