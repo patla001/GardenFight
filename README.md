@@ -1,10 +1,6 @@
-# [Progress Video](https://www.youtube.com/watch?v=eiFQcHKocGE)
-
-
 # GARDEN FIGHT!
 <p align="center">
-  <img width="300" height="300" src="Demo/icon.png"><img width="300" height="300" alt="image" src="https://github.com/user-attachments/assets/652e65d9-2f5b-4a42-88bc-ce1f9f0629ab" />
-
+  <img width="300" height="300" src="Demo/icon.png">
 </p>
 
 # Introduction
@@ -165,7 +161,6 @@ Garden Fight is a game built upon Fight, a 3d multiplayer combat arena game, but
 
 ## General Goals for Each Member
 * note that these goals are tentative and different roles can be swapped around
-  
 **Ethan Kent**
 - Create a new Boss AI
 - Implement different styles of bullet hell
