@@ -1,4 +1,8 @@
+<<<<<<< Updated upstream
 # FIGHT!
+=======
+# GARDEN FIGHT!
+>>>>>>> Stashed changes
 <p align="center">
   <img width="300" height="300" src="Demo/icon.png">
 </p>
@@ -144,3 +148,34 @@ This project uses:
 - **Assets**: RPG Character Animation Pack FREE from Unity Asset Store
 - **Networking**: Mirror Networking by vis2k and contributors
 
+<<<<<<< Updated upstream
+=======
+## Current Target for the Game
+Garden Fight is a game built upon Fight, a 3d multiplayer combat arena game, but instead focuses on you, the player, fighting a boss. We are aiming toward a bullet hell dark souls style boss that you can fight user the human controlled player. We are aiming to add interactive mechanics and bullet hell to the boss to make the boss fight more engaging and challenging. As we add more elements to the boss, we can separate the boss into different difficulties with each difficulty having different mechanics, the easier difficulty have less than the hardest. Garden Fight will keep the core attacking and defending mechanics found and used from Fight.
+
+## General Goals for Each Member
+* note that these goals are tentative and different roles can be swapped around
+**Ethan Kent**
+- Create a new Boss AI
+- Implement different styles of bullet hell
+- Separate difficulties from the boss
+- Implement boss phases
+- Update README and "story"/theme
+
+**Evan Tardiff**
+- Manage human controlled player mechanics
+- Manage simple boss attack mechanics
+- Handle boss animation
+
+**Ezer Patlan**
+- Port Fight from Unity 2019.1.8f1 to Unity 6000.2.2f1 (Unity 6.2) with modern networking
+- Create a new arena to fit the garden theme
+- Habdle new art assets
+- Handle animations
+
+**Saqwon Williams**
+- Manage and implement health system for player and boss
+- Manage damage system for player and boss
+- Manage damage animations for player and boss
+
+>>>>>>> Stashed changes
