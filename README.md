@@ -1,6 +1,9 @@
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 # FIGHT!
 =======
+=======
+>>>>>>> Stashed changes
 # GARDEN FIGHT!
 >>>>>>> Stashed changes
 <p align="center">
