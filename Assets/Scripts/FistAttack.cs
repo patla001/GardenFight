@@ -22,4 +22,15 @@ public class FistAttack : Attack
             actionControl.Block(id, "Fist");
         }
     }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        BossHealth boss = other.GetComponent<BossHealth>();
+        if (boss != null)
+        {
+            boss.TakeDamage(damage);
+            return;
+        }
+    }
 }
+

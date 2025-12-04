@@ -1,10 +1,13 @@
 using UnityEngine;
 
-public class FistHitbox : MonoBehaviour
+public class SwordHitbox : MonoBehaviour
 {
     public int damage = 10;
     public string bossTag = "Boss";
+
     public Collider col;
+
+    // prevents multiple damage hits every swing
     private bool hasHit = false;
 
     void Start()
@@ -15,20 +18,24 @@ public class FistHitbox : MonoBehaviour
 
     public void EnableHitbox()
     {
-        Debug.Log("Fist Collider ENABLED");
+        Debug.Log("Sword Collider ENABLED");
+
+        // reset so this swing can deal damage once
         hasHit = false;
+
         col.enabled = true;
     }
 
     public void DisableHitbox()
     {
-        Debug.Log("Fist Collider DISABLED");
+        Debug.Log("Sword Collider DISABLED");
         col.enabled = false;
         hasHit = false;
     }
 
     private void OnTriggerEnter(Collider other)
     {
+        // if weve already hit during this swing then ignore all further triggers
         if (hasHit)
             return;
 
@@ -39,9 +46,11 @@ public class FistHitbox : MonoBehaviour
         if (boss != null)
         {
             Debug.Log("Damage dealt: " + damage);
+
             boss.TakeDamage(damage);
 
-            hasHit = true;    
+            // lock the hit for this attack window
+            hasHit = true;
         }
     }
 }

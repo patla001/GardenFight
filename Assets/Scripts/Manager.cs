@@ -325,7 +325,8 @@ public class Manager : MonoBehaviour
 
     public static Player GetPlayer(string _playerID)
     {
-        return players[_playerID];
+
+     return players[_playerID];
     }
 
     public static List<string> GetAllPlayer()

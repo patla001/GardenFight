@@ -9,7 +9,6 @@ public class BossHealth : MonoBehaviour
 
     public int maxHealth = 100;
     public int currentHealth;
-
     public Slider healthSlider; 
 
     void Start()
@@ -40,7 +39,7 @@ public class BossHealth : MonoBehaviour
 
     void Die()
     {
-        Debug.Log("Boss Should Be Dead Now");
+        Debug.Log("Dat Boi Died");
    
     }
 }
