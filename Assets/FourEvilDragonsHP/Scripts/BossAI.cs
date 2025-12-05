@@ -5,55 +5,60 @@ using Mirror;
 public class BossAI : NetworkBehaviour
 {
     [Header("References")]
-    public Transform player; // reference to player transform
-    public BulletHell bulletHell; // reference to bullet hell script
+    public Transform player;
+    public BulletHell bulletHell;
+    public BulletSpray bulletSpray;
 
     [Header("AI Settings")]
-    public float detectionRadius = 20f; // how far boss can detect player
-    public float attackRadius = 3f; // how close boss needs to be to attack
-    public float roamRadius = 5f; // how far boss can roam from start
-    public float roamDelay = 4f; // delay before roaming again
+    public float detectionRadius = 20f;
+    public float attackRadius = 3f;
+    public float roamRadius = 5f;
+    public float roamDelay = 4f;
 
-    [Header("Bullet Hell Settings")]
-    public float ringCooldown = 30f; // cooldown between bullet ring attacks
-    private float lastRingTime = -Mathf.Infinity; // track last time ring was fired
+    [Header("Attack Settings")]
+    public float attackCooldown = 5f; // cooldown between alternating attacks
+    private float lastAttackTime = -Mathf.Infinity;
+    private bool useRingNext = true; // alternate attacks
 
-    private NavMeshAgent agent; // navmesh agent for movement
-    private Vector3 startPosition; // starting position of boss
-    private float roamTimer; // timer for roaming
+    private NavMeshAgent agent;
+    private Vector3 startPosition;
+    private float roamTimer;
 
-    private enum BossState { Idle, Roam, Chase, Attack } // states boss can be in
-    private BossState state = BossState.Idle; // default state is idle
+    private enum BossState { Idle, Roam, Chase, Attack }
+    private BossState state = BossState.Idle;
 
     #region Unity Methods
     public override void OnStartServer()
     {
         base.OnStartServer();
 
-        agent = GetComponent<NavMeshAgent>(); // get navmesh agent
-        if (bulletHell == null)
-            bulletHell = GetComponent<BulletHell>(); // get bullet hell script if not assigned
+        agent = GetComponent<NavMeshAgent>();
 
-        startPosition = transform.position; // save starting position
-        roamTimer = roamDelay; // set initial roam timer
+        if (bulletHell == null)
+            bulletHell = GetComponent<BulletHell>();
+
+        if (bulletSpray == null)
+            bulletSpray = GetComponent<BulletSpray>();
+
+        startPosition = transform.position;
+        roamTimer = roamDelay;
     }
 
     void Update()
     {
-        if (!isServer) return; // only server runs ai logic
+        if (!isServer) return;
 
-        if (player == null) // if player not assigned try to find one
+        if (player == null)
         {
             GameObject p = GameObject.FindGameObjectWithTag("Player");
             if (p != null)
                 player = p.transform;
             else
-                return; // no player found stop here
+                return;
         }
 
-        float distance = Vector3.Distance(transform.position, player.position); // distance to player
+        float distance = Vector3.Distance(transform.position, player.position);
 
-        // handle state logic
         switch (state)
         {
             case BossState.Idle: HandleIdle(distance); break;
@@ -67,14 +72,14 @@ public class BossAI : NetworkBehaviour
     #region AI States
     private void HandleIdle(float distance)
     {
-        if (distance <= detectionRadius) // if player close enough start chasing
+        if (distance <= detectionRadius)
         {
             state = BossState.Chase;
             return;
         }
 
-        roamTimer -= Time.deltaTime; // count down roam timer
-        if (roamTimer <= 0) // when timer runs out start roaming
+        roamTimer -= Time.deltaTime;
+        if (roamTimer <= 0)
         {
             state = BossState.Roam;
             roamTimer = roamDelay;
@@ -83,51 +88,58 @@ public class BossAI : NetworkBehaviour
 
     private void HandleRoam(float distance)
     {
-        if (distance <= detectionRadius) // if player enters detection range chase
+        if (distance <= detectionRadius)
         {
             state = BossState.Chase;
             return;
         }
 
-        if (!agent.hasPath) // if not already moving pick random roam position
+        if (!agent.hasPath)
         {
             Vector3 newPos = startPosition + Random.insideUnitSphere * roamRadius;
             agent.SetDestination(new Vector3(newPos.x, transform.position.y, newPos.z));
         }
 
-        if (agent.remainingDistance <= 1f) // once reached roam spot go idle
+        if (agent.remainingDistance <= 1f)
             state = BossState.Idle;
     }
 
     private void HandleChase(float distance)
     {
-        if (distance > detectionRadius * 1.5f) // if player too far stop chasing
+        if (distance > detectionRadius * 1.5f)
         {
             state = BossState.Idle;
             return;
         }
 
-        agent.SetDestination(player.position); // move toward player
+        agent.SetDestination(player.position);
 
-        if (distance <= attackRadius) // if close enough switch to attack
+        if (distance <= attackRadius)
             state = BossState.Attack;
     }
 
     private void HandleAttack(float distance)
     {
-        agent.SetDestination(transform.position); // stop moving
-        transform.LookAt(player); // face player
+        agent.SetDestination(transform.position);
+        transform.LookAt(player);
 
-        if (bulletHell != null && !bulletHell.IsRunning()) // if bullet hell not running
+        if (Time.time - lastAttackTime >= attackCooldown)
         {
-            if (Time.time - lastRingTime >= ringCooldown) // check cooldown
+            if (useRingNext && bulletHell != null && !bulletHell.IsRunning())
             {
-                bulletHell.StartRingSequence(); // fire bullet ring
-                lastRingTime = Time.time; // update last ring time
+                bulletHell.StartRingSequence();
+                useRingNext = false;
             }
+            else if (!useRingNext && bulletSpray != null && !bulletSpray.IsRunning())
+            {
+                bulletSpray.StartSpray();
+                useRingNext = true;
+            }
+
+            lastAttackTime = Time.time;
         }
 
-        if (distance > attackRadius + 2f) // if player backs away chase again
+        if (distance > attackRadius + 2f)
             state = BossState.Chase;
     }
     #endregion
