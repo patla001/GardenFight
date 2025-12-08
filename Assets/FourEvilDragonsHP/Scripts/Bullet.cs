@@ -3,35 +3,47 @@ using Mirror;
 
 public class Bullet : NetworkBehaviour
 {
-    public int damage = 10; // how much damage this bullet deals
+    // damage value for this bullet (applied when it hits a player)
+    public int damage = 10;
 
+    // called automatically when the bullet collides with another collider
     private void OnTriggerEnter(Collider other)
     {
-        if (!isServer) return; // only server applies damage
+        // only the server should handle damage and destruction logic
+        if (!isServer) return;
 
-        Player player = other.GetComponent<Player>(); // check if hit object is player
+        // check if the object we hit has a Player component
+        Player player = other.GetComponent<Player>();
         if (player != null)
         {
-            player.TakeDamage(damage, "Magic"); // apply damage to player
-            NetworkServer.Destroy(gameObject); // destroy bullet after hit
+            // if it’s a player, apply damage
+            player.TakeDamage(damage, "Magic");
+
+            // then destroy the bullet so it doesn’t keep flying
+            NetworkServer.Destroy(gameObject);
         }
         else
         {
-            // destroy bullet if it hits something else like walls
+            // if it hits anything else (like walls or environment), just destroy it
             NetworkServer.Destroy(gameObject);
         }
     }
 
-    // optional lifetime so bullets dont stay forever
+    // optional lifetime so bullets don’t persist forever in the scene
     public float lifetime = 5f;
+
+    // called when the bullet is created on the server
     public override void OnStartServer()
     {
-        Invoke(nameof(DestroySelf), lifetime); // schedule destroy after lifetime
+        // schedule the bullet to destroy itself after its lifetime expires
+        Invoke(nameof(DestroySelf), lifetime);
     }
 
+    // server-only method to remove the bullet
     [Server]
     void DestroySelf()
     {
-        NetworkServer.Destroy(gameObject); // remove bullet from server
+        // destroy the bullet object across the network
+        NetworkServer.Destroy(gameObject);
     }
 }
