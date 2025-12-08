@@ -1,6 +1,8 @@
 ﻿using UnityEngine;
 using UnityEngine.AI;
 using Mirror;
+using System.Collections;
+
 
 public class BossAI : NetworkBehaviour
 {
@@ -17,28 +19,32 @@ public class BossAI : NetworkBehaviour
 
     [Header("Attack Settings")]
     public float meleeAttackRange = 1.5f; // Very close range for a physical hit
-    public float meleeDamage = 10f;       // Damage for the melee hit
-    public float attackCooldown = 5f;     // cooldown between alternating attacks
-    private float lastAttackTime = -Mathf.Infinity;
-    private bool useRingNext = true;       // alternate attacks
+    public float meleeDamage = 10f;       // Damage for the melee hit
+    public float attackCooldown = 5f;     // cooldown between alternating attacks
+    private float lastAttackTime = -Mathf.Infinity;
+    private bool useRingNext = true;      // alternate attacks
 
-    private NavMeshAgent agent;
-    private Animator animator;             // Reference to the Animator component
-    private Vector3 startPosition;
+    [Header("Ring Attack Cooldown")]
+    public float ringCooldown = 30f;      // seconds between full ring sequences
+    private float lastRingTime = -Mathf.Infinity;
+
+    private NavMeshAgent agent;
+    private Animator animator;            // Reference to the Animator component
+    private Vector3 startPosition;
     private float roamTimer;
 
     private enum BossState { Idle, Roam, Chase, Attack }
     private BossState state = BossState.Idle;
 
-    #region Unity Methods
-    public override void OnStartServer()
+    #region Unity Methods
+    public override void OnStartServer()
     {
         base.OnStartServer();
 
         agent = GetComponent<NavMeshAgent>();
         animator = GetComponent<Animator>();
 
-        if (bulletHell == null)
+        if (bulletHell == null)
             bulletHell = GetComponent<BulletHell>();
 
         if (bulletSpray == null)
@@ -71,10 +77,10 @@ public class BossAI : NetworkBehaviour
             case BossState.Attack: HandleAttack(distance); break;
         }
     }
-    #endregion
+    #endregion
 
-    #region AI States
-    private void HandleIdle(float distance)
+    #region AI States
+    private void HandleIdle(float distance)
     {
         if (distance <= detectionRadius)
         {
@@ -129,19 +135,26 @@ public class BossAI : NetworkBehaviour
 
         if (Time.time - lastAttackTime >= attackCooldown)
         {
-            // 1. Priority Attack: Melee (if player is very close)
-            if (distance <= meleeAttackRange)
+            // 1. Priority Attack: Melee (if player is very close)
+            if (distance <= meleeAttackRange)
             {
                 TriggerMeleeAttack();
             }
-            // 2. Ranged Attacks (if player is still in the general attack range)
-            else
+            // 2. Ranged Attacks (if player is still in the general attack range)
+            else
             {
+                // Ring attack with cooldown after completion
                 if (useRingNext && bulletHell != null && !bulletHell.IsRunning())
                 {
-                    bulletHell.StartRingSequence();
-                    useRingNext = false;
-                    lastAttackTime = Time.time;
+                    if (Time.time - lastRingTime >= ringCooldown)
+                    {
+                        bulletHell.StartRingSequence();
+                        useRingNext = false;
+                        lastAttackTime = Time.time;
+
+                        // Update cooldown only after sequence completes
+                        StartCoroutine(WaitForRingCooldown());
+                    }
                 }
                 else if (!useRingNext && bulletSpray != null && !bulletSpray.IsRunning())
                 {
@@ -160,26 +173,39 @@ public class BossAI : NetworkBehaviour
     {
         if (animator != null)
         {
-            animator.SetTrigger("MeleeAttack");
+            animator.SetTrigger("MeleeAttack");
         }
         lastAttackTime = Time.time;
-    }
+    }
 
-    // This function is called by an Animation Event during the attack clip!
-    public void InflictMeleeDamage()
+    // This function is called by an Animation Event during the attack clip!
+    public void InflictMeleeDamage()
     {
-        // Check for the player in a small sphere around the boss
-        Collider[] hits = Physics.OverlapSphere(transform.position, meleeAttackRange, LayerMask.GetMask("Player"));
+        Collider[] hits = Physics.OverlapSphere(transform.position, meleeAttackRange, LayerMask.GetMask("Player"));
 
         foreach (Collider hit in hits)
         {
-            PlayerHealth playerHealth = hit.GetComponent<PlayerHealth>();
+            PlayerHealth playerHealth = hit.GetComponent<PlayerHealth>();
             if (playerHealth != null)
             {
-                playerHealth.TakeDamage(meleeDamage);
+                playerHealth.TakeDamage(meleeDamage);
                 return;
-            }
+            }
         }
     }
-    #endregion
+    #endregion
+
+    #region Helpers
+    private IEnumerator WaitForRingCooldown()
+    {
+        // Wait until the ring sequence finishes
+        while (bulletHell.IsRunning())
+        {
+            yield return null;
+        }
+
+        // Start cooldown timer after completion
+        lastRingTime = Time.time;
+    }
+    #endregion
 }

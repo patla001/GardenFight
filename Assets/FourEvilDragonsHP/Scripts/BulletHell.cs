@@ -3,16 +3,26 @@ using System.Collections;
 
 public class BulletHell : MonoBehaviour
 {
-    [Header("Ring Radii")]
-    public float innerRadius = 3f; // radius for inner ring
-    public float middleRadius = 6f; // radius for middle ring
-    public float outerRadius = 9f; // radius for outer ring
+    [Header("Ring Radii (base values)")]
+    public float innerRadius = 3f; // base radius for inner ring
+    public float middleRadius = 6f; // base radius for middle ring
+    public float outerRadius = 9f; // base radius for outer ring
+
+    [Header("Runtime Scaling")]
+    [Range(0.1f, 2f)]
+    public float radiusScale = 1f;      // global scale for radii/physics
+    [Range(0.1f, 2f)]
+    public float visualScale = 1f;      // independent scale for the ring visual prefab
+    [Header("Visual Height")]
+    [Range(0.001f, 1f)]
+    public float ringHeight = 0.05f;    // Y scale for the visual (makes the ring thin)
 
     [Header("Damage Settings")]
     public int damage = 20; // amount of damage dealt to player
-    public string damageType = "Magic"; // type of damage can be magic sword or fist
+    public string damageType = "Magic";
     public LayerMask playerLayer; // layer mask to detect player
     public float delayBetweenWaves = 1.5f; // delay between waves
+    public float ringWidth = 1f; // thickness of unsafe ring (base)
 
     [Header("Visuals (optional)")]
     public GameObject ringPrefab; // prefab for ring visuals
@@ -78,14 +88,16 @@ public class BulletHell : MonoBehaviour
 
     private void DamageRing(float radius)
     {
-        float ringWidth = 1f; // thickness of unsafe ring
+        // apply global scale
+        float scaledRadius = radius * radiusScale;
+        float scaledWidth = ringWidth * radiusScale;
 
-        Collider[] hits = Physics.OverlapSphere(transform.position, radius + ringWidth * 0.5f, playerLayer);
+        Collider[] hits = Physics.OverlapSphere(transform.position, scaledRadius + scaledWidth * 0.5f, playerLayer);
 
         foreach (var hit in hits)
         {
             float dist = Vector3.Distance(transform.position, hit.transform.position);
-            if (dist >= radius - ringWidth * 0.5f && dist <= radius + ringWidth * 0.5f)
+            if (dist >= scaledRadius - scaledWidth * 0.5f && dist <= scaledRadius + scaledWidth * 0.5f)
             {
                 // call player damage
                 Player player = hit.GetComponent<Player>();
@@ -96,16 +108,23 @@ public class BulletHell : MonoBehaviour
             }
         }
 
-        DebugDrawRing(radius, Color.red, 1f); // draw debug ring
+        DebugDrawRing(scaledRadius, Color.red, 1f); // draw debug ring
     }
 
     #region Visual Helpers
     private GameObject InstantiateRing(float radius)
     {
         if (ringPrefab == null) return null;
+
+        float scaledRadius = radius * radiusScale;
         GameObject g = Instantiate(ringPrefab, transform.position, Quaternion.identity, transform);
-        float diameter = radius * 2f;
-        g.transform.localScale = new Vector3(diameter, 1f, diameter);
+
+        // diameter * visualScale — use visualScale so visuals can be tuned independently
+        float diameter = scaledRadius * 2f;
+
+        // apply the inspector-controlled ringHeight for a thin visual ring
+        g.transform.localScale = new Vector3(diameter * visualScale, ringHeight, diameter * visualScale);
+
         return g;
     }
 
