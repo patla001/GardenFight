@@ -64,6 +64,13 @@ public class MyNetManager : NetworkManager
         StartCoroutine(StartingGameHost());
     }
 
+    public void EndGameHost()
+    {
+        fadeAnimator.SetTrigger("Fade In");
+        StartCoroutine(Cancelling());
+    }
+
+
     IEnumerator StartingGameHost()
     {
         yield return new WaitForSeconds(.75f);

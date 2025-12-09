@@ -33,6 +33,9 @@ public class FistHitbox : MonoBehaviour
             return;
 
         Debug.Log("Hit collider: " + other.name);
+        Debug.Log("Collider type: " + other.GetType().Name);
+        Debug.Log("Bounds size: " + other.bounds.size);
+
 
         BossHealth boss = other.GetComponentInParent<BossHealth>();
 
