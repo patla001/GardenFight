@@ -3,180 +3,142 @@ using System.Collections;
 
 public class BulletHell : MonoBehaviour
 {
-    [Header("Ring Radii (base values)")]
-    public float innerRadius = 3f; // base radius for the innermost ring
-    public float middleRadius = 6f; // base radius for the middle ring
-    public float outerRadius = 9f; // base radius for the outermost ring
+    [Header("Ring Settings")]
+    public float innerRadius = 3f;   // distance from center to inner ring
+    public float middleRadius = 6f;  // distance from center to middle ring
+    public float outerRadius = 9f;   // distance from center to outer ring
 
-    [Header("Runtime Scaling")]
-    [Range(0.1f, 2f)]
-    public float radiusScale = 1f;      // global scale factor applied to all radii and physics checks
-    [Range(0.1f, 2f)]
-    public float visualScale = 1f;      // independent scale factor for visuals (lets you tune appearance separately)
+    [Header("Damage Ranges (per ring)")]
+    public float innerWidth = 1.5f;  // thickness of the inner ring’s damage band
+    public float middleWidth = 1.5f; // thickness of the middle ring’s damage band
+    public float outerWidth = 1.5f;  // thickness of the outer ring’s damage band
 
-    [Header("Visual Height")]
-    [Range(0.001f, 1f)]
-    public float ringHeight = 0.05f;    // thickness of the ring visual in the Y axis (keeps it flat/thin)
+    public float radiusScale = 1f;   // multiplier to scale all radii (useful for tuning)
 
-    [Header("Damage Settings")]
-    public int damage = 20; // amount of damage dealt to the player when hit
-    public string damageType = "Magic"; // type of damage (could be used for resistances, etc.)
-    public LayerMask playerLayer; // layer mask used to detect players inside the rings
-    public float delayBetweenWaves = 1.5f; // time delay between each wave of rings
-    public float ringWidth = 1f; // thickness of the damaging ring area
+    [Header("Damage")]
+    public int damage = 10;          // damage dealt per tick when player is hit
+    public string damageType = "Magic"; // type of damage (for player logic)
 
-    [Header("Visuals (optional)")]
-    public GameObject ringPrefab; // prefab used to show ring visuals in the scene
-    public float ringVisualDuration = 1.4f; // how long the ring visuals remain before being destroyed
+    [Header("Sequence Settings")]
+    public float delayBetweenWaves = 2f;   // time between each wave of rings
+    public float ringActiveDuration = 1.5f; // how long each ring remains active
 
-    private bool running = false; // flag to track if the sequence is currently active
+    [Header("Visuals (Optional)")]
+    public GameObject ringPrefab;    // prefab used to represent rings visually
+    public float ringHeight = 0.05f; // thickness of the ring visual in Y axis
+    public float visualScale = 1f;   // multiplier to scale ring visuals
 
-    // check if the sequence is running
+    [Header("Player Reference")]
+    public Player localPlayer;       // reference to the player object
+
+    private bool running = false;    // tracks whether the sequence is currently running
+
+    private void Update()
+    {
+        // auto-assign player reference if not set
+        if (localPlayer == null)
+        {
+            localPlayer = FindObjectOfType<Player>();
+        }
+    }
+
+    // public method to start the ring attack sequence
+    public void StartRingSequence()
+    {
+        if (!running)
+            StartCoroutine(RingSequence());
+    }
+
+    // helper method to check if the sequence is active
     public bool IsRunning()
     {
         return running;
     }
 
-    // entry point to start the ring sequence
-    public void StartRingSequence()
-    {
-        if (!running) // only start if not already active
-            StartCoroutine(RingSequence());
-    }
-
-    // coroutine that runs the full ring attack sequence
+    // coroutine that handles the full sequence of ring waves
     private IEnumerator RingSequence()
     {
-        running = true; // mark as active
+        running = true;
 
-        // optional visuals: create ring prefabs if assigned
-        GameObject outerVis = null, midVis = null, innerVis = null;
-        if (ringPrefab != null)
-        {
-            outerVis = InstantiateRing(outerRadius);
-            midVis = InstantiateRing(middleRadius);
-            innerVis = InstantiateRing(innerRadius);
-        }
+        // declare visuals once (will be reused each wave)
+        GameObject innerVis = null;
+        GameObject midVis = null;
+        GameObject outerVis = null;
 
-        // wave 1: outer ring is safe, inner/middle deal damage
-        DoWave(safeRing: 3);
-        UpdateRingVisuals(ref outerVis, ref midVis, ref innerVis, safeRing: 3);
+        // Wave 1: outer ring is safe, inner + middle deal damage
+        innerVis = SpawnRing(innerRadius);
+        midVis = SpawnRing(middleRadius);
+        StartCoroutine(DamageRingOverTime(innerRadius, innerWidth, ringActiveDuration));
+        StartCoroutine(DamageRingOverTime(middleRadius, middleWidth, ringActiveDuration));
+        Destroy(innerVis, ringActiveDuration);
+        Destroy(midVis, ringActiveDuration);
         yield return new WaitForSeconds(delayBetweenWaves);
 
-        // wave 2: middle ring is safe
-        DoWave(safeRing: 2);
-        UpdateRingVisuals(ref outerVis, ref midVis, ref innerVis, safeRing: 2);
+        // Wave 2: middle ring is safe, inner + outer deal damage
+        innerVis = SpawnRing(innerRadius);
+        outerVis = SpawnRing(outerRadius);
+        StartCoroutine(DamageRingOverTime(innerRadius, innerWidth, ringActiveDuration));
+        StartCoroutine(DamageRingOverTime(outerRadius, outerWidth, ringActiveDuration));
+        Destroy(innerVis, ringActiveDuration);
+        Destroy(outerVis, ringActiveDuration);
         yield return new WaitForSeconds(delayBetweenWaves);
 
-        // wave 3: inner ring is safe
-        DoWave(safeRing: 1);
-        UpdateRingVisuals(ref outerVis, ref midVis, ref innerVis, safeRing: 1);
+        // Wave 3: inner ring is safe, middle + outer deal damage
+        midVis = SpawnRing(middleRadius);
+        outerVis = SpawnRing(outerRadius);
+        StartCoroutine(DamageRingOverTime(middleRadius, middleWidth, ringActiveDuration));
+        StartCoroutine(DamageRingOverTime(outerRadius, outerWidth, ringActiveDuration));
+        Destroy(midVis, ringActiveDuration);
+        Destroy(outerVis, ringActiveDuration);
         yield return new WaitForSeconds(delayBetweenWaves);
 
-        // clean up visuals after sequence ends
-        if (outerVis != null) Destroy(outerVis, ringVisualDuration);
-        if (midVis != null) Destroy(midVis, ringVisualDuration);
-        if (innerVis != null) Destroy(innerVis, ringVisualDuration);
-
-        running = false; // mark as finished
+        running = false; // sequence finished
     }
 
-    // executes a single wave, damaging all rings except the designated safe one
-    private void DoWave(int safeRing)
+    // coroutine that applies damage to the player if they are inside a ring’s band
+    private IEnumerator DamageRingOverTime(float radius, float width, float duration)
     {
-        if (safeRing != 1) DamageRing(innerRadius);   // damage inner ring if not safe
-        if (safeRing != 2) DamageRing(middleRadius);  // damage middle ring if not safe
-        if (safeRing != 3) DamageRing(outerRadius);   // damage outer ring if not safe
+        float scaledRadius = radius * radiusScale; // apply scaling factor
+        float halfWidth = width * 0.5f;            // half width used for band calculation
+        float timer = 0f;
 
-        Debug.Log("BulletHell: wave fired, safe ring " + safeRing);
-    }
+        float damageCooldown = 1f;                 // seconds between damage ticks
+        float lastDamageTime = -Mathf.Infinity;    // tracks last time damage was applied
 
-    // applies damage to players standing inside a specific ring
-    private void DamageRing(float radius)
-    {
-        // scale radius and width based on global scale factor
-        float scaledRadius = radius * radiusScale;
-        float scaledWidth = ringWidth * radiusScale;
-
-        // find all colliders within the ring’s area
-        Collider[] hits = Physics.OverlapSphere(transform.position, scaledRadius + scaledWidth * 0.5f, playerLayer);
-
-        foreach (var hit in hits)
+        while (timer < duration)
         {
-            // measure distance from center to player
-            float dist = Vector3.Distance(transform.position, hit.transform.position);
+            timer += Time.deltaTime;
 
-            // check if player is inside the ring’s band (between inner and outer edges)
-            if (dist >= scaledRadius - scaledWidth * 0.5f && dist <= scaledRadius + scaledWidth * 0.5f)
+            if (localPlayer != null)
             {
-                // apply damage if player component is found
-                Player player = hit.GetComponent<Player>();
-                if (player != null)
+                float dist = Vector3.Distance(transform.position, localPlayer.transform.position);
+
+                // Only damage if player is within the thin band around the ring radius
+                if (Mathf.Abs(dist - scaledRadius) <= halfWidth)
                 {
-                    player.TakeDamage(damage, damageType);
+                    // apply damage only if cooldown has passed
+                    if (Time.time - lastDamageTime >= damageCooldown)
+                    {
+                        localPlayer.TakeDamage(damage, damageType);
+                        Debug.Log($"Local player hit by ring at radius {radius}");
+                        lastDamageTime = Time.time;
+                    }
                 }
             }
-        }
 
-        // draw debug ring in editor for visualization
-        DebugDrawRing(scaledRadius, Color.red, 1f);
+            yield return null; // wait until next frame
+        }
     }
 
     #region Visual Helpers
-    // creates a visual ring prefab at the given radius
-    private GameObject InstantiateRing(float radius)
+    // spawns a ring prefab at the given radius and scales it to match
+    private GameObject SpawnRing(float radius)
     {
         if (ringPrefab == null) return null;
-
-        float scaledRadius = radius * radiusScale;
-        GameObject g = Instantiate(ringPrefab, transform.position, Quaternion.identity, transform);
-
-        // calculate diameter and apply visual scaling
-        float diameter = scaledRadius * 2f;
-
-        // set local scale: diameter in X/Z, thin height in Y
-        g.transform.localScale = new Vector3(diameter * visualScale, ringHeight, diameter * visualScale);
-
-        return g;
-    }
-
-    // updates ring colors to show which ring is safe (green) and which are unsafe (red)
-    private void UpdateRingVisuals(ref GameObject outer, ref GameObject mid, ref GameObject inner, int safeRing)
-    {
-        SetVisualColor(outer, (safeRing == 3) ? Color.green : Color.red);
-        SetVisualColor(mid, (safeRing == 2) ? Color.green : Color.red);
-        SetVisualColor(inner, (safeRing == 1) ? Color.green : Color.red);
-    }
-
-    // helper to set the color of a ring prefab
-    private void SetVisualColor(GameObject g, Color color)
-    {
-        if (g == null) return;
-        var rend = g.GetComponent<Renderer>();
-        if (rend != null && rend.material != null)
-            rend.material.color = color;
-    }
-    #endregion
-
-    #region Debug
-    // draws a debug circle in the editor to visualize ring positions
-    private void DebugDrawRing(float radius, Color color, float duration)
-    {
-        int segments = 60; // number of line segments to approximate the circle
-        float step = 360f / segments; // angle step per segment
-
-        for (int i = 0; i < segments; i++)
-        {
-            float a1 = Mathf.Deg2Rad * (i * step);
-            float a2 = Mathf.Deg2Rad * ((i + 1) * step);
-
-            // calculate two points on the circle
-            Vector3 p1 = transform.position + new Vector3(Mathf.Cos(a1), 0, Mathf.Sin(a1)) * radius;
-            Vector3 p2 = transform.position + new Vector3(Mathf.Cos(a2), 0, Mathf.Sin(a2)) * radius;
-
-            // draw a line between them
-            Debug.DrawLine(p1, p2, color, duration);
-        }
+        GameObject ring = Instantiate(ringPrefab, transform.position, Quaternion.identity, transform);
+        float diameter = radius * 2f; // scale prefab so its edge matches the radius
+        ring.transform.localScale = new Vector3(diameter * visualScale, ringHeight, diameter * visualScale);
+        return ring;
     }
     #endregion
 }
