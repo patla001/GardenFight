@@ -167,6 +167,7 @@ Garden Fight is a game built upon Fight, a 3d multiplayer combat arena game, but
 - Implement ring style attack
 - Implement bullet spam attack
 - Implement laser attack
+- Implement player damage taken from boss from attacks
 - Separate difficulties from the boss
 - Implement boss phases
 - Update README and "story"/theme
