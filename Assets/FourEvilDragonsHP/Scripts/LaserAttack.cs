@@ -1,13 +1,14 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class LaserAttack : MonoBehaviour
 {
     [Header("Laser Settings")]
-    public GameObject laserPrefab;       // prefab used to represent the laser visually
+    public GameObject laserPrefab;       // prefab used to represent the laser visually (should contain mesh only)
     public float chargeTime = 1.5f;      // time spent charging before the laser reaches full size
-    public float laserLength = 15f;      // maximum length of the laser beam
-    public float laserFullWidth = 1f;    // maximum width of the laser beam
+    public float laserLength = 15f;      // maximum length of the laser beam (Z axis of visual)
+    public float laserFullWidth = 1f;    // maximum width of the laser beam (X axis of visual)
     public float laserHeight = 0.1f;     // thickness of the laser visual in the Y axis
     public int damage = 30;              // damage dealt to the player when hit
     public float damageInterval = 1f;    // seconds between damage ticks while touching the laser
@@ -21,30 +22,33 @@ public class LaserAttack : MonoBehaviour
     }
 
     // coroutine that handles the full lifecycle of the laser attack
-    // includes charging, damaging, and cleanup phases
     private IEnumerator LaserCoroutine(Vector3 startPosition, Vector3 targetPosition)
     {
-        // safety check: if no prefab is assigned, exit early
         if (laserPrefab == null) yield break;
 
-        // create the laser object at the start position
-        GameObject laser = Instantiate(laserPrefab, startPosition, Quaternion.identity);
+        // Create a non-scaled parent which will hold the collider and damage handler.
+        GameObject root = new GameObject("LaserRoot");
+        root.transform.position = startPosition;
+        root.transform.rotation = Quaternion.LookRotation((targetPosition - startPosition).normalized, Vector3.up);
 
-        // orient the laser to face the target position (beam points forward)
-        laser.transform.LookAt(targetPosition);
+        // Add collider on the root (so it's not affected by visual scaling).
+        BoxCollider col = root.AddComponent<BoxCollider>();
+        col.isTrigger = true;
 
-        // initialize laser as very thin (charging starts small)
-        laser.transform.localScale = new Vector3(0.1f, laserHeight, 0.1f);
+        // Damage handler on the root (handles OnTriggerEnter/Exit and ticking).
+        LaserDamageHandler handler = root.AddComponent<LaserDamageHandler>();
+        handler.damage = damage;
+        handler.damageInterval = damageInterval;
+        handler.damageType = "Laser";
 
-        // add collider if not already present (used for detecting player contact)
-        BoxCollider col = laser.GetComponent<BoxCollider>();
-        if (col == null) col = laser.AddComponent<BoxCollider>();
-        col.isTrigger = true; // set collider to trigger mode so it doesn’t block movement
+        // Instantiate the visual prefab as a child so it can be scaled for the charging animation.
+        GameObject visual = Instantiate(laserPrefab, root.transform);
+        visual.transform.localPosition = Vector3.zero;
+        visual.transform.localRotation = Quaternion.identity;
 
-        // attach damage handler with cooldown logic
-        LaserDamageHandler handler = laser.AddComponent<LaserDamageHandler>();
-        handler.damage = damage;               // pass damage value to handler
-        handler.damageInterval = damageInterval; // pass damage interval to handler
+        // Ensure root has scale 1 so collider stays predictable.
+        root.transform.localScale = Vector3.one;
+        visual.transform.localScale = new Vector3(0.1f, laserHeight, 0.1f);
 
         float timer = 0f;
 
@@ -52,54 +56,90 @@ public class LaserAttack : MonoBehaviour
         while (timer < chargeTime)
         {
             timer += Time.deltaTime;
-            float t = timer / chargeTime; // normalized progress (0 → 1)
+            float t = Mathf.Clamp01(timer / chargeTime);
 
-            // smoothly interpolate scale from thin to full size
             float width = Mathf.Lerp(0.1f, laserFullWidth, t);
             float length = Mathf.Lerp(0.1f, laserLength, t);
 
-            laser.transform.localScale = new Vector3(width, laserHeight, length);
+            // Scale only the visual child
+            visual.transform.localScale = new Vector3(width, laserHeight, length);
 
-            // update collider size to match beam’s current scale
+            // Update collider (on the root) — because root scale is (1,1,1) this is straightforward.
             col.size = new Vector3(width, laserHeight, length);
-            col.center = new Vector3(0, 0, length * 0.5f); // shift collider forward
+            // Move the collider forward so it covers the beam area: center.z = length/2
+            col.center = new Vector3(0f, 0f, length * 0.5f);
 
-            yield return null; // wait until next frame
+            yield return null;
         }
 
-        // damage phase: laser is fully charged and active
-        // keep the laser visible for a short time after firing
+        // damage phase: keep laser visible for a short time after firing
         yield return new WaitForSeconds(laserVisibleTime);
 
-        // cleanup: destroy the laser object to free memory
-        Destroy(laser);
+        Destroy(root); // destroys child visual as well
     }
 }
 
+
 // helper component that applies damage when the player touches the laser
-// uses a cooldown so damage is applied once per interval instead of every frame
+// uses OnTriggerEnter/Exit and per-player coroutines to avoid lingering damage
 public class LaserDamageHandler : MonoBehaviour
 {
     public int damage = 30;              // damage dealt per tick
     public string damageType = "Laser";  // type of damage (for player logic)
     public float damageInterval = 1f;    // seconds between damage ticks
 
-    private float lastDamageTime = -Mathf.Infinity; // tracks last time damage was applied
+    // track active damage coroutines per player so we can stop them on exit
+    private Dictionary<int, Coroutine> activeDamageRoutines = new Dictionary<int, Coroutine>();
 
-    // called every frame while another collider stays inside this trigger
-    private void OnTriggerStay(Collider other)
+    private void OnTriggerEnter(Collider other)
     {
-        // check if the object inside the trigger is the player
         Player player = other.GetComponent<Player>();
         if (player != null)
         {
-            // only apply damage if enough time has passed since the last tick
-            if (Time.time - lastDamageTime >= damageInterval)
+            int id = player.GetInstanceID();
+            // avoid starting multiple coroutines for the same player
+            if (!activeDamageRoutines.ContainsKey(id))
             {
-                player.TakeDamage(damage, damageType); // apply damage to player
-                Debug.Log("Player damaged by laser");  // log for debugging
-                lastDamageTime = Time.time;            // update last damage time
+                Coroutine c = StartCoroutine(ApplyDamageOverTime(player));
+                activeDamageRoutines[id] = c;
             }
         }
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        Player player = other.GetComponent<Player>();
+        if (player != null)
+        {
+            int id = player.GetInstanceID();
+            if (activeDamageRoutines.TryGetValue(id, out Coroutine c))
+            {
+                StopCoroutine(c);
+                activeDamageRoutines.Remove(id);
+            }
+        }
+    }
+
+    // coroutine that applies damage repeatedly while the player remains inside
+    private IEnumerator ApplyDamageOverTime(Player player)
+    {
+        // immediate damage on entry (optional). If you don't want immediate tick, wait first.
+        player.TakeDamage(damage, damageType);
+
+        // then wait and apply repeated ticks
+        while (true)
+        {
+            yield return new WaitForSeconds(damageInterval);
+            if (player == null) yield break; // safety
+            player.TakeDamage(damage, damageType);
+        }
+    }
+
+    private void OnDisable()
+    {
+        // cleanup any remaining coroutines if object is destroyed early
+        foreach (var kv in activeDamageRoutines)
+            if (kv.Value != null) StopCoroutine(kv.Value);
+        activeDamageRoutines.Clear();
     }
 }
