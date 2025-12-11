@@ -26,27 +26,27 @@ public class LaserAttack : MonoBehaviour
     {
         if (laserPrefab == null) yield break;
 
-        // Create a non-scaled parent which will hold the collider and damage handler.
+        // create a non-scaled parent which will hold the collider and damage handler.
         GameObject root = new GameObject("LaserRoot");
         root.transform.position = startPosition;
         root.transform.rotation = Quaternion.LookRotation((targetPosition - startPosition).normalized, Vector3.up);
 
-        // Add collider on the root (so it's not affected by visual scaling).
+        // add collider on the root (so it's not affected by visual scaling).
         BoxCollider col = root.AddComponent<BoxCollider>();
         col.isTrigger = true;
 
-        // Damage handler on the root (handles OnTriggerEnter/Exit and ticking).
+        // damage handler on the root (handles OnTriggerEnter/Exit and ticking).
         LaserDamageHandler handler = root.AddComponent<LaserDamageHandler>();
         handler.damage = damage;
         handler.damageInterval = damageInterval;
         handler.damageType = "Laser";
 
-        // Instantiate the visual prefab as a child so it can be scaled for the charging animation.
+        // instantiate the visual prefab as a child so it can be scaled for the charging animation.
         GameObject visual = Instantiate(laserPrefab, root.transform);
         visual.transform.localPosition = Vector3.zero;
         visual.transform.localRotation = Quaternion.identity;
 
-        // Ensure root has scale 1 so collider stays predictable.
+        // ensure root has scale 1 so collider stays predictable.
         root.transform.localScale = Vector3.one;
         visual.transform.localScale = new Vector3(0.1f, laserHeight, 0.1f);
 

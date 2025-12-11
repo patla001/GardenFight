@@ -120,7 +120,7 @@ MonoBehaviour:
   m_MinSize: {x: 400, y: 100}
   m_MaxSize: {x: 32384, y: 16192}
   vertical: 0
-  controlID: 124
+  controlID: 151
   draggingID: 0
 --- !u!114 &6
 MonoBehaviour:
@@ -146,7 +146,7 @@ MonoBehaviour:
   m_MinSize: {x: 200, y: 100}
   m_MaxSize: {x: 16192, y: 16192}
   vertical: 1
-  controlID: 60
+  controlID: 62
   draggingID: 0
 --- !u!114 &7
 MonoBehaviour:
@@ -172,7 +172,7 @@ MonoBehaviour:
   m_MinSize: {x: 200, y: 50}
   m_MaxSize: {x: 16192, y: 8096}
   vertical: 0
-  controlID: 61
+  controlID: 63
   draggingID: 0
 --- !u!114 &8
 MonoBehaviour:
@@ -219,8 +219,8 @@ MonoBehaviour:
     y: 0
     width: 395
     height: 683
-  m_MinSize: {x: 202, y: 226}
-  m_MaxSize: {x: 4002, y: 4026}
+  m_MinSize: {x: 200, y: 200}
+  m_MaxSize: {x: 4000, y: 4000}
   m_ActualView: {fileID: 17}
   m_Panes:
   - {fileID: 17}
@@ -276,7 +276,7 @@ MonoBehaviour:
   m_MinSize: {x: 100, y: 100}
   m_MaxSize: {x: 8096, y: 16192}
   vertical: 1
-  controlID: 125
+  controlID: 119
   draggingID: 0
 --- !u!114 &12
 MonoBehaviour:
@@ -379,10 +379,10 @@ MonoBehaviour:
     m_TextWithWhitespace: "Animator\u200B"
   m_Pos:
     serializedVersion: 2
-    x: 551
-    y: 102
-    width: 678
-    height: 589
+    x: 757
+    y: 79
+    width: 672
+    height: 243
   m_SerializedDataModeController:
     m_DataMode: 0
     m_PreferredDataMode: 0
@@ -432,14 +432,14 @@ MonoBehaviour:
       e31: 0
       e32: 0
       e33: 1
-    - e00: 1
+    - e00: 0.30590227
       e01: 0
       e02: 0
-      e03: 0
+      e03: 59.61325
       e10: 0
-      e11: 1
+      e11: 0.30590227
       e12: 0
-      e13: 0
+      e13: -2.519291
       e20: 0
       e21: 0
       e22: 1
@@ -513,7 +513,7 @@ MonoBehaviour:
     m_SkipHidden: 0
     m_SearchArea: 1
     m_Folders:
-    - Assets/FourEvilDragonsHP/Scripts
+    - Assets/FourEvilDragonsHP/Animations/DragonSoulEater
     m_Globs: []
     m_ProductIds: 
     m_AnyWithAssetOrigin: 0
@@ -531,7 +531,7 @@ MonoBehaviour:
     scrollPos: {x: 0, y: 0}
     m_SelectedIDs: 9a250000
     m_LastClickedID: 9626
-    m_ExpandedIDs: 00000000c47f0000c67f0000c87f0000ca7f0000cc7f0000ce7f0000d07f0000d27f0000d47f0000
+    m_ExpandedIDs: 00000000c27f0000c47f0000c67f0000c87f0000ca7f0000cc7f0000ce7f0000d07f0000d27f0000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -557,10 +557,10 @@ MonoBehaviour:
       m_Icon: {fileID: 0}
       m_ResourceFile: 
   m_AssetTreeState:
-    scrollPos: {x: 0, y: 360}
+    scrollPos: {x: 0, y: 301}
     m_SelectedIDs: 
     m_LastClickedID: 0
-    m_ExpandedIDs: ffffffff00000000c47f0000c67f0000c87f0000ca7f0000cc7f0000ce7f0000d07f0000d27f0000d47f0000
+    m_ExpandedIDs: ffffffff00000000c27f0000c47f0000c67f0000c87f0000ca7f0000cc7f0000ce7f0000d07f0000d27f000056800000949400009c950000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -641,9 +641,9 @@ MonoBehaviour:
   m_SceneHierarchy:
     m_TreeViewState:
       scrollPos: {x: 0, y: 0}
-      m_SelectedIDs: aadaffff
-      m_LastClickedID: 0
-      m_ExpandedIDs: 06fbffff
+      m_SelectedIDs: f0740000
+      m_LastClickedID: 29936
+      m_ExpandedIDs: 12fbffff
       m_RenameOverlay:
         m_UserAcceptedRename: 0
         m_Name: 
@@ -1463,7 +1463,7 @@ MonoBehaviour:
     m_ControlHash: -371814159
     m_PrefName: Preview_InspectorPreview
   m_LastInspectedObjectInstanceID: -1
-  m_LastVerticalScrollValue: 0
+  m_LastVerticalScrollValue: 378
   m_GlobalObjectId: 
   m_InspectorMode: 0
   m_LockTracker:

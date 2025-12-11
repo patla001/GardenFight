@@ -1,74 +1,76 @@
 ﻿using UnityEngine;
 using UnityEngine.AI;
 using Mirror;
+using System.Collections; // ✅ Needed for IEnumerator-based melee timing
 
 public class BossAI : NetworkBehaviour
 {
     [Header("References")]
-    public Transform player; // reference to the player object we’re targeting
-    public BulletHell bulletHell; // script that controls the bullet ring attack
-    public BulletSpray bulletSpray; // script that controls the bullet spray attack
-    public LaserAttack laserAttack; // script that controls the laser attack
+    public Transform player;          // reference to the player the boss will target
+    public BulletHell bulletHell;     // ring-style bullet attack
+    public BulletSpray bulletSpray;   // random spray bullet attack
+    public LaserAttack laserAttack;   // long-range laser attack
 
     [Header("AI Settings")]
-    public float detectionRadius = 20f; // how far away the boss can detect the player
-    public float attackRadius = 3f; // how close the player must be before the boss attacks
-    public float roamRadius = 5f; // radius around the spawn point for idle roaming
-    public float roamDelay = 4f; // delay before the boss decides to roam again
+    public float detectionRadius = 20f; // distance at which boss notices the player
+    public float attackRadius = 3f;     // distance at which boss switches to attack mode
+    public float roamRadius = 5f;       // how far boss wanders from its start point
+    public float roamDelay = 4f;        // delay between roam movements
 
     [Header("Attack Settings")]
-    public float meleeAttackRange = 1.5f; // distance required for melee attack
-    public float meleeDamage = 10f; // damage dealt by melee attack
-    public float attackCooldown = 5f; // minimum time between attacks
-    private float lastAttackTime = -Mathf.Infinity; // keeps track of last attack time
+    public float meleeAttackRange = 1.5f; // distance required to land melee hits
+    public float meleeDamage = 10f;       // damage dealt by melee attack
+    public float attackCooldown = 5f;     // delay between any two attacks
+    private float lastAttackTime = -Mathf.Infinity; // tracks last time boss attacked
 
-    private bool useRingNext = true; // flag to alternate between ring and spray attacks
-    private bool useLaserNext = false; // flag to determine when laser should be used
+    private bool useRingNext = true;   // toggles between ring and spray attacks
+    private bool useLaserNext = false; // determines when laser should be used
 
     [Header("Laser Cooldown")]
-    public float laserCooldown = 30f; // cooldown time for laser attack
-    private float lastLaserTime = -Mathf.Infinity; // keeps track of last laser usage
+    public float laserCooldown = 30f;     // long cooldown for laser attack
+    private float lastLaserTime = -Mathf.Infinity; // tracks last laser usage
 
-    private NavMeshAgent agent; // unity’s navmesh agent for pathfinding
-    private Animator animator; // animator for triggering animations
-    private Vector3 startPosition; // boss’s initial spawn position
-    private float roamTimer; // timer to control roaming behavior
+    private NavMeshAgent agent;        // handles movement and pathfinding
+    private Animator animator;         // controls boss animations
+    private Vector3 startPosition;     // original spawn point for roaming
+    private float roamTimer;           // countdown timer for roaming behavior
 
-    // simple finite state machine for boss behavior
+    // simple state machine for boss behavior
     private enum BossState { Idle, Roam, Chase, Attack }
     private BossState state = BossState.Idle;
 
     public override void OnStartServer()
     {
         base.OnStartServer();
-        agent = GetComponent<NavMeshAgent>(); // grab navmesh agent
-        animator = GetComponent<Animator>(); // grab animator
 
-        // make sure attack scripts are assigned, fallback to local components
-        if (bulletHell == null)
-            bulletHell = GetComponent<BulletHell>();
-        if (bulletSpray == null)
-            bulletSpray = GetComponent<BulletSpray>();
-        if (laserAttack == null)
-            laserAttack = GetComponent<LaserAttack>();
+        // auto-assign required components
+        agent = GetComponent<NavMeshAgent>();
+        animator = GetComponent<Animator>();
 
-        startPosition = transform.position; // record spawn position for roaming
-        roamTimer = roamDelay; // initialize roam timer
+        // auto-assign attack scripts if not set in Inspector
+        if (bulletHell == null) bulletHell = GetComponent<BulletHell>();
+        if (bulletSpray == null) bulletSpray = GetComponent<BulletSpray>();
+        if (laserAttack == null) laserAttack = GetComponent<LaserAttack>();
+
+        // store starting position for roaming logic
+        startPosition = transform.position;
+        roamTimer = roamDelay;
     }
 
     void Update()
     {
-        if (!isServer) return; // only run this logic on the server
+        if (!isServer) return; // only server controls AI
 
-        // if player reference is missing, try to find one
+        // find player if not already assigned
         if (player == null)
         {
             GameObject p = GameObject.FindGameObjectWithTag("Player");
             if (p != null) player = p.transform;
-            else return; // no player found, skip update
+            else return; // no player found, skip logic
         }
 
-        float distance = Vector3.Distance(transform.position, player.position); // measure distance to player
+        // measure distance to player for decision-making
+        float distance = Vector3.Distance(transform.position, player.position);
 
         // run behavior based on current state
         switch (state)
@@ -82,127 +84,152 @@ public class BossAI : NetworkBehaviour
 
     private void HandleIdle(float distance)
     {
-        // if player is close enough, switch to chase
+        // switch to chase if player enters detection range
         if (distance <= detectionRadius)
         {
             state = BossState.Chase;
             return;
         }
 
-        // otherwise, count down until roaming
+        // count down until next roam movement
         roamTimer -= Time.deltaTime;
         if (roamTimer <= 0)
         {
             state = BossState.Roam;
-            roamTimer = roamDelay; // reset timer
+            roamTimer = roamDelay;
         }
     }
 
     private void HandleRoam(float distance)
     {
-        // if player enters detection radius, switch to chase
+        // stop roaming and chase player if detected
         if (distance <= detectionRadius)
         {
             state = BossState.Chase;
             return;
         }
 
-        // pick a random position near spawn to wander to
+        // choose a random point near the start position
         if (!agent.hasPath)
         {
             Vector3 newPos = startPosition + Random.insideUnitSphere * roamRadius;
             agent.SetDestination(new Vector3(newPos.x, transform.position.y, newPos.z));
         }
 
-        // once destination is reached, go back to idle
+        // return to idle once destination is reached
         if (agent.remainingDistance <= 1f)
             state = BossState.Idle;
     }
 
     private void HandleChase(float distance)
     {
-        // if player runs too far away, stop chasing
+        // if player gets too far, return to idle
         if (distance > detectionRadius * 1.5f)
         {
             state = BossState.Idle;
             return;
         }
 
-        // otherwise, keep moving toward player
+        // move toward the player
         agent.SetDestination(player.position);
 
-        // if close enough, switch to attack
+        // switch to attack mode when close enough
         if (distance <= attackRadius)
             state = BossState.Attack;
     }
 
     private void HandleAttack(float distance)
     {
-        // stop moving and face the player
+        // stop moving while attacking
         agent.SetDestination(transform.position);
+
+        // face the player for accuracy
         transform.LookAt(player);
 
-        // check if attack cooldown has expired
+        // check if boss is allowed to attack again
         if (Time.time - lastAttackTime >= attackCooldown)
         {
-            // melee attack if very close
+            // melee attack if close enough
             if (distance <= meleeAttackRange)
             {
                 TriggerMeleeAttack();
             }
             else
             {
-                // laser attack if flagged and off cooldown
+                // laser attack if it's next in rotation and off cooldown
                 if (useLaserNext && laserAttack != null && Time.time - lastLaserTime >= laserCooldown)
                 {
                     laserAttack.FireLaser(transform.position, player.position);
-                    useLaserNext = false; // reset flag
-                    lastLaserTime = Time.time; // record laser usage
-                    lastAttackTime = Time.time; // record attack usage
+                    useLaserNext = false;
+                    lastLaserTime = Time.time;
+                    lastAttackTime = Time.time;
                 }
-                // bullet ring attack if flagged and not already running
+                // ring attack if available
                 else if (useRingNext && bulletHell != null && !bulletHell.IsRunning())
                 {
                     bulletHell.StartRingSequence();
-                    useRingNext = false; // switch to spray next
-                    useLaserNext = true; // prep laser for next cycle
+                    useRingNext = false;
+                    useLaserNext = true;
                     lastAttackTime = Time.time;
                 }
-                // bullet spray attack if ring isn’t next
+                // spray attack as fallback
                 else if (!useRingNext && bulletSpray != null && !bulletSpray.IsRunning())
                 {
                     bulletSpray.StartSpray();
-                    useRingNext = true; // switch back to ring next
+                    useRingNext = true;
                     lastAttackTime = Time.time;
                 }
             }
         }
 
-        // if player moves out of attack range, chase again
+        // if player backs away, resume chasing
         if (distance > attackRadius + 2f)
             state = BossState.Chase;
     }
 
     private void TriggerMeleeAttack()
     {
-        // trigger melee animation
+        // trigger melee animation if available
         if (animator != null)
             animator.SetTrigger("MeleeAttack");
-        lastAttackTime = Time.time; // record attack usage
+
+        // wait for animation to reach hit frame
+        StartCoroutine(MeleeDamageWindow());
+
+        lastAttackTime = Time.time;
     }
 
-    public void InflictMeleeDamage()
+    private IEnumerator MeleeDamageWindow()
     {
-        // check for player within melee range
-        Collider[] hits = Physics.OverlapSphere(transform.position, meleeAttackRange, LayerMask.GetMask("Player"));
+        // small delay to sync with animation impact moment
+        yield return new WaitForSeconds(0.4f);
+        ApplyMeleeDamage();
+    }
+
+    private void ApplyMeleeDamage()
+    {
+        // detect all objects within melee range
+        Collider[] hits = Physics.OverlapSphere(transform.position, meleeAttackRange);
+
         foreach (Collider hit in hits)
         {
-            PlayerHealth playerHealth = hit.GetComponent<PlayerHealth>();
-            if (playerHealth != null)
+            // only damage the player
+            if (hit.CompareTag("Player"))
             {
-                playerHealth.TakeDamage(meleeDamage); // apply damage
-                return; // stop after hitting one player
+                Player player = hit.GetComponentInParent<Player>();
+                if (player != null)
+                {
+                    player.TakeDamage((int)meleeDamage, "Fist");
+                }
+                return; // stop after first valid hit
             }
         }
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        // visualize melee range in editor for debugging
+        Gizmos.color = Color.red;
+        Gizmos.DrawWireSphere(transform.position, meleeAttackRange);
     }
 }
