@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.AI;
 using Mirror;
 using System.Collections; // ✅ Needed for IEnumerator-based melee timing
@@ -208,22 +208,35 @@ public class BossAI : NetworkBehaviour
 
     private void ApplyMeleeDamage()
     {
+        Debug.Log("BossAI: ApplyMeleeDamage called!");
+        
         // detect all objects within melee range
         Collider[] hits = Physics.OverlapSphere(transform.position, meleeAttackRange);
+        
+        Debug.Log($"BossAI: Found {hits.Length} colliders in melee range");
 
         foreach (Collider hit in hits)
         {
+            Debug.Log($"BossAI: Checking collider: {hit.name}, Tag: {hit.tag}");
+            
             // only damage the player
             if (hit.CompareTag("Player"))
             {
                 Player player = hit.GetComponentInParent<Player>();
                 if (player != null)
                 {
+                    Debug.Log($"BossAI: Dealing {meleeDamage} damage to player!");
                     player.TakeDamage((int)meleeDamage, "Fist");
+                }
+                else
+                {
+                    Debug.LogWarning("BossAI: Found Player tag but no Player component!");
                 }
                 return; // stop after first valid hit
             }
         }
+        
+        Debug.Log("BossAI: No player found in melee range");
     }
 
     private void OnDrawGizmosSelected()

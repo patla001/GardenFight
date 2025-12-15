@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
 using Mirror;
@@ -82,19 +82,60 @@ public class Player : NetworkBehaviour
         }
 
         if (myHealthSlider == null)
-            Debug.LogError("PlayerHealthSlider not found!");
+            Debug.LogWarning("PlayerHealthSlider not found - health bar won't display");
         if (myRatio == null)
-            Debug.LogError("PlayerRatio text not found!");
+            Debug.LogWarning("PlayerRatio text not found - ratio won't display");
     }
 
+    private RectTransform healthFillRect;
+    private float healthBarWidth = 342f; // barWidth (350) - padding (4*2=8) = 342
+    
     private void SetHealthBar(int amount)
     {
+        // Try to find slider again if not found yet
+        if (myHealthSlider == null)
+        {
+            myHealthSlider = GameObject.Find("PlayerHealthSlider")?.GetComponent<Slider>();
+            if (myHealthSlider != null)
+                Debug.Log("Player: Found PlayerHealthSlider!");
+        }
+        
+        // Try to find fill rect if not found yet (unique name: PlayerHealthFill)
+        if (healthFillRect == null)
+        {
+            GameObject fillObj = GameObject.Find("PlayerHealthFill");
+            if (fillObj != null)
+            {
+                healthFillRect = fillObj.GetComponent<RectTransform>();
+                if (healthFillRect != null)
+                    Debug.Log("Player: Found PlayerHealthFill rect!");
+            }
+        }
+        
+        float healthPercent = (float)amount / maxHealth;
+        
         if (myHealthSlider != null)
-            myHealthSlider.value = (float)amount / maxHealth;
+        {
+            myHealthSlider.value = healthPercent;
+        }
+        
+        // Directly update the fill bar visual
+        if (healthFillRect != null)
+        {
+            float fillWidth = healthPercent * healthBarWidth;
+            healthFillRect.sizeDelta = new Vector2(fillWidth, healthFillRect.sizeDelta.y);
+            Debug.Log($"Player: Health bar visual updated to {amount}/{maxHealth} ({healthPercent * 100:F0}%)");
+        }
+        else
+        {
+            Debug.Log($"Player: Health value updated to {amount}/{maxHealth} = {healthPercent}");
+        }
     }
 
     public void TakeDamage(int damage, string type)
     {
+        Debug.Log($"Player.TakeDamage called! Damage: {damage}, Type: {type}, CurrentHealth: {currentHealth}");
+        
         if (isDead) return;
 
         if (type == "Magic")
@@ -163,7 +204,44 @@ public class Player : NetworkBehaviour
         {
             shootAnimator.Play("Shoot Recovering");
             RefreshRatio();
+            
+            // Reset the boss for a new fight
+            ResetBossFight();
+            
+            // Clean up UI messages
+            CleanupGameMessages();
         }
+    }
+    
+    void ResetBossFight()
+    {
+        // Find and reset the boss
+        BossHealth bossHealth = FindFirstObjectByType<BossHealth>();
+        if (bossHealth != null)
+        {
+            bossHealth.ResetBoss();
+        }
+        
+        Debug.Log("Boss fight reset!");
+    }
+    
+    void CleanupGameMessages()
+    {
+        // Remove Game Over canvas
+        GameObject gameOverCanvas = GameObject.Find("GameOverCanvas");
+        if (gameOverCanvas != null)
+        {
+            Destroy(gameOverCanvas);
+        }
+        
+        // Remove Victory canvas
+        GameObject victoryCanvas = GameObject.Find("VictoryCanvas");
+        if (victoryCanvas != null)
+        {
+            Destroy(victoryCanvas);
+        }
+        
+        Debug.Log("Game messages cleaned up");
     }
 
     public void RefreshRatio()
@@ -196,23 +274,91 @@ public class Player : NetworkBehaviour
     {
         isDead = true;
         PlayerPrefs.SetInt("Lose Count", PlayerPrefs.GetInt("Lose Count") + 1);
+        PlayerPrefs.Save(); // Save immediately
         RefreshRatio();
         animator.SetBool("Dead", true);
         manager.reMatchButton.gameObject.SetActive(true);
         manager.disableControl = true;
         audioManager.PlaySFX("Defeat");
         print("I am dead :(");
+        
+        // Stop the boss from attacking
+        StopBossAttacks();
+        
+        // Show Game Over message
+        ShowGameOverMessage();
+    }
+    
+    void StopBossAttacks()
+    {
+        // Find and stop the boss AI
+        BossAI bossAI = FindFirstObjectByType<BossAI>();
+        if (bossAI != null)
+        {
+            bossAI.enabled = false;
+            Debug.Log("Boss AI stopped - player died");
+        }
+        
+        // Stop boss attack scripts
+        BulletHell bulletHell = FindFirstObjectByType<BulletHell>();
+        if (bulletHell != null) bulletHell.enabled = false;
+        
+        BulletSpray bulletSpray = FindFirstObjectByType<BulletSpray>();
+        if (bulletSpray != null) bulletSpray.enabled = false;
+        
+        LaserAttack laserAttack = FindFirstObjectByType<LaserAttack>();
+        if (laserAttack != null) laserAttack.enabled = false;
+    }
+    
+    void ShowGameOverMessage()
+    {
+        // Check if message already exists
+        GameObject gameOverObj = GameObject.Find("GameOverText");
+        if (gameOverObj != null) return;
+        
+        // Create a canvas for game over message
+        GameObject canvasObj = new GameObject("GameOverCanvas");
+        Canvas canvas = canvasObj.AddComponent<Canvas>();
+        canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        canvas.sortingOrder = 50; // Lower than buttons so it doesn't block them
+        canvasObj.AddComponent<UnityEngine.UI.CanvasScaler>();
+        
+        // Create game over text - positioned between rematch button and cancel button
+        gameOverObj = new GameObject("GameOverText");
+        gameOverObj.transform.SetParent(canvasObj.transform, false);
+        
+        RectTransform rect = gameOverObj.AddComponent<RectTransform>();
+        rect.anchorMin = new Vector2(0.5f, 0.4f); // Middle-lower area
+        rect.anchorMax = new Vector2(0.5f, 0.4f);
+        rect.pivot = new Vector2(0.5f, 0.5f);
+        rect.anchoredPosition = Vector2.zero;
+        rect.sizeDelta = new Vector2(800, 100);
+        
+        TMPro.TextMeshProUGUI text = gameOverObj.AddComponent<TMPro.TextMeshProUGUI>();
+        text.text = "GAME OVER";
+        text.fontSize = 64;
+        text.fontStyle = TMPro.FontStyles.Bold;
+        text.alignment = TMPro.TextAlignmentOptions.Center;
+        text.color = Color.red;
+        text.outlineWidth = 0.2f;
+        text.outlineColor = Color.black;
+        
+        Debug.Log("Game Over message displayed");
     }
 
     public void Win()
     {
+        if (isWinner) return; // Prevent multiple wins
+        
         isWinner = true;
         PlayerPrefs.SetInt("Win Count", PlayerPrefs.GetInt("Win Count") + 1);
+        PlayerPrefs.Save(); // Save immediately
         RefreshRatio();
         animator.SetBool("Win", true);
         audioManager.PlaySFX("Victory");
         manager.disableControl = true;
-        print("I win :D");
+        // Don't show rematch button on victory - player has won!
+        print("I win :D - Win count saved!");
     }
 
     private void OnDisable()

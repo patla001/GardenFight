@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using Mirror;
 using System.Collections;
 using System.Collections.Generic;
@@ -152,7 +152,7 @@ public class Manager : MonoBehaviour
 
         if (loseCount == 0)
             loseText = "No\nDefeat";
-        else if (winCount == 1)
+        else if (loseCount == 1)
             loseText = "1\nDefeat";
         else
             loseText = loseCount + "\nDefeats";
@@ -262,6 +262,13 @@ public class Manager : MonoBehaviour
     public void ReMatch()
     {
         actionControl.ResetALlPlayers();
+        
+        // Refresh the win/loss display after rematch
+        isRefresed = false;
+        RefreshEverything();
+        
+        // Hide the rematch button
+        reMatchButton.gameObject.SetActive(false);
     }
 
     private void DisableButtons()

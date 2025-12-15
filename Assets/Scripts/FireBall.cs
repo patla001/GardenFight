@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Mirror;
@@ -28,6 +28,15 @@ public class FireBall : MonoBehaviour
         GetComponent<Rigidbody>().linearVelocity = Vector3.zero;
         GameObject tempExplosion = Instantiate(explosion, transform.position, Quaternion.identity);
         Destroy(this.gameObject, destroyDelay);
+
+        // Check if we hit the boss
+        BossHealth boss = other.GetComponent<BossHealth>();
+        if (boss != null)
+        {
+            boss.TakeDamage(damage);
+            camShake.ShakeCam(explosionShakeMag, explosionRotMag);
+            return;
+        }
 
         if (other.tag != "Player")
         {
