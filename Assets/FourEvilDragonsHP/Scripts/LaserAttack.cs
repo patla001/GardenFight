@@ -13,6 +13,12 @@ public class LaserAttack : MonoBehaviour
     public int damage = 30;              // damage dealt to the player when hit
     public float damageInterval = 1f;    // seconds between damage ticks while touching the laser
     public float laserVisibleTime = 0.5f;// how long the laser remains visible after firing
+    private BossAI bossAI;
+
+    public void Initialize(BossAI boss)
+    {
+        bossAI = boss;
+    }
 
     // public method to trigger the laser attack
     // takes a start position (where the laser originates) and a target position (where it points)
@@ -76,6 +82,10 @@ public class LaserAttack : MonoBehaviour
         yield return new WaitForSeconds(laserVisibleTime);
 
         Destroy(root); // destroys child visual as well
+        if (bossAI != null)
+        {
+            bossAI.EndAttack();
+        }
     }
 }
 
@@ -142,4 +152,5 @@ public class LaserDamageHandler : MonoBehaviour
             if (kv.Value != null) StopCoroutine(kv.Value);
         activeDamageRoutines.Clear();
     }
+
 }

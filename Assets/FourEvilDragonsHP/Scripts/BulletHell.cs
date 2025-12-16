@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 
+
 public class BulletHell : MonoBehaviour
 {
     [Header("Ring Settings")]
@@ -33,6 +34,14 @@ public class BulletHell : MonoBehaviour
 
     private bool running = false;    // tracks whether the sequence is currently running
 
+    private BossAI bossAI;
+
+    public void Initialize(BossAI boss)
+    {
+        bossAI = boss;
+    }
+
+    
     private void Update()
     {
         // auto-assign player reference if not set
@@ -93,6 +102,11 @@ public class BulletHell : MonoBehaviour
         yield return new WaitForSeconds(delayBetweenWaves);
 
         running = false; // sequence finished
+
+        if (bossAI != null)
+        {
+            bossAI.EndAttack();
+        }
     }
 
     // coroutine that applies damage to the player if they are inside a ring’s band
@@ -138,6 +152,7 @@ public class BulletHell : MonoBehaviour
         GameObject ring = Instantiate(ringPrefab, transform.position, Quaternion.identity, transform);
         float diameter = radius * 2f; // scale prefab so its edge matches the radius
         ring.transform.localScale = new Vector3(diameter * visualScale, ringHeight, diameter * visualScale);
+
         return ring;
     }
     #endregion

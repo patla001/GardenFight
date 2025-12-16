@@ -15,6 +15,12 @@ public class BulletSpray : NetworkBehaviour
     public float spawnRadius = 1.5f; // distance from boss center where bullets are spawned
 
     private bool running = false; // flag to track if spray sequence is active
+    private BossAI bossAI;
+
+    public void Initialize(BossAI boss)
+    {
+        bossAI = boss;
+    }
 
     // check if spray sequence is currently running
     public bool IsRunning()
@@ -43,6 +49,10 @@ public class BulletSpray : NetworkBehaviour
         }
 
         running = false; // mark as finished
+        if (bossAI != null)
+        {
+            bossAI.EndAttack();
+        }
     }
 
     // handles spawning and launching a single bullet
@@ -62,13 +72,13 @@ public class BulletSpray : NetworkBehaviour
 
         // assign a random direction for the bullet to travel
         Vector3 direction = Random.onUnitSphere; // random unit vector
-        direction.y = Mathf.Abs(direction.y);    // bias upward so bullets don’t shoot downward
+        direction.y = Mathf.Abs(direction.y);    // bias upward so bullets don?t shoot downward
         bullet.transform.forward = direction;    // orient bullet toward chosen direction
 
         // spawn bullet across the network so all clients see it
         NetworkServer.Spawn(bullet);
 
-        // apply velocity to bullet’s rigidbody if present
+        // apply velocity to bullet?s rigidbody if present
         Rigidbody rb = bullet.GetComponent<Rigidbody>();
         if (rb != null)
         {

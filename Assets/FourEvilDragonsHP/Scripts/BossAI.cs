@@ -39,6 +39,22 @@ public class BossAI : NetworkBehaviour
     private enum BossState { Idle, Roam, Chase, Attack }
     private BossState state = BossState.Idle;
 
+    private BossState lastState;
+    private bool isAttacking = false;
+    private enum BossAttackType
+    {
+        None,
+        Melee,
+        Ring,
+        Spray,
+        Laser
+    }
+
+    private BossAttackType currentAttack = BossAttackType.None;
+
+
+
+
     public override void OnStartServer()
     {
         base.OnStartServer();
@@ -55,11 +71,23 @@ public class BossAI : NetworkBehaviour
         // store starting position for roaming logic
         startPosition = transform.position;
         roamTimer = roamDelay;
+
+        lastState = state;
+        OnStateChanged(state);
+
     }
 
     void Update()
     {
         if (!isServer) return; // only server controls AI
+
+        if (currentAttack == BossAttackType.Melee)
+        {
+            // Lock movement completely during any attack
+            agent.isStopped = true;
+            return; 
+        }
+
 
         // find player if not already assigned
         if (player == null)
@@ -80,6 +108,13 @@ public class BossAI : NetworkBehaviour
             case BossState.Chase: HandleChase(distance); break;
             case BossState.Attack: HandleAttack(distance); break;
         }
+
+        if (state != lastState)
+        {
+            OnStateChanged(state);
+            lastState = state;
+        }
+
     }
 
     private void HandleIdle(float distance)
@@ -140,12 +175,22 @@ public class BossAI : NetworkBehaviour
 
     private void HandleAttack(float distance)
     {
+        if (currentAttack == BossAttackType.None)
+        {
+            agent.isStopped = false;
+            agent.SetDestination(player.position);
+        }
+
         // stop moving while attacking
-        agent.SetDestination(transform.position);
+        //agent.SetDestination(transform.position);
 
         // face the player for accuracy
         transform.LookAt(player);
 
+        if (currentAttack != BossAttackType.None)
+            return;
+
+   
         // check if boss is allowed to attack again
         if (Time.time - lastAttackTime >= attackCooldown)
         {
@@ -159,15 +204,32 @@ public class BossAI : NetworkBehaviour
                 // laser attack if it's next in rotation and off cooldown
                 if (useLaserNext && laserAttack != null && Time.time - lastLaserTime >= laserCooldown)
                 {
+
+                    agent.isStopped = true;
+                    agent.SetDestination(player.position);
+
+                    laserAttack.Initialize(this);
+
                     laserAttack.FireLaser(transform.position, player.position);
+                    currentAttack = BossAttackType.Laser;
                     useLaserNext = false;
                     lastLaserTime = Time.time;
                     lastAttackTime = Time.time;
+                
+                   
                 }
                 // ring attack if available
                 else if (useRingNext && bulletHell != null && !bulletHell.IsRunning())
                 {
+
+                    agent.isStopped = true;
+                    agent.SetDestination(player.position);
+
+                    PlayBulletHellAnimation();
+                    bulletHell.Initialize(this);
+
                     bulletHell.StartRingSequence();
+                    currentAttack = BossAttackType.Ring;
                     useRingNext = false;
                     useLaserNext = true;
                     lastAttackTime = Time.time;
@@ -175,7 +237,12 @@ public class BossAI : NetworkBehaviour
                 // spray attack as fallback
                 else if (!useRingNext && bulletSpray != null && !bulletSpray.IsRunning())
                 {
+                    agent.isStopped = true;
+                    PlayBulletSprayAnimation();
+                    bulletSpray.Initialize(this);
+
                     bulletSpray.StartSpray();
+                    currentAttack = BossAttackType.Spray;
                     useRingNext = true;
                     lastAttackTime = Time.time;
                 }
@@ -185,13 +252,23 @@ public class BossAI : NetworkBehaviour
         // if player backs away, resume chasing
         if (distance > attackRadius + 2f)
             state = BossState.Chase;
+
+        if (!isAttacking && distance > meleeAttackRange)
+        {
+            state = BossState.Chase;
+        }
     }
 
     private void TriggerMeleeAttack()
     {
-        // trigger melee animation if available
-        if (animator != null)
-            animator.SetTrigger("MeleeAttack");
+        if (isAttacking) return;
+
+        isAttacking = true;
+        currentAttack = BossAttackType.Melee;
+        agent.isStopped = true;
+
+        PlayBasicAttackAnimation();
+
 
         // wait for animation to reach hit frame
         StartCoroutine(MeleeDamageWindow());
@@ -201,9 +278,12 @@ public class BossAI : NetworkBehaviour
 
     private IEnumerator MeleeDamageWindow()
     {
-        // small delay to sync with animation impact moment
+        // small delay to sync with animation impact window
         yield return new WaitForSeconds(0.4f);
         ApplyMeleeDamage();
+
+        EndAttack();
+
     }
 
     private void ApplyMeleeDamage()
@@ -230,7 +310,7 @@ public class BossAI : NetworkBehaviour
                 }
                 else
                 {
-                    Debug.LogWarning("BossAI: Found Player tag but no Player component!");
+                    Debug.LogWarning("BossAI: Found Player tag but no Player component");
                 }
                 return; // stop after first valid hit
             }
@@ -245,4 +325,87 @@ public class BossAI : NetworkBehaviour
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, meleeAttackRange);
     }
+
+    private void OnStateChanged(BossState newState)
+    {
+        switch (newState)
+        {
+            case BossState.Idle:
+                PlayIdleAnimation(); 
+                break;
+
+            case BossState.Roam:
+                PlayWalkAnimation();
+                break;
+
+            case BossState.Chase:
+                PlayWalkAnimation();
+                break;
+            case BossState.Attack:
+                
+                break;
+        }
+    }
+
+    public void EndAttack()
+    {
+        currentAttack = BossAttackType.None;
+        isAttacking = false;
+        agent.isStopped = false;
+        agent.ResetPath();
+        state = BossState.Chase;
+    }
+
+    private void ResetMovementAnimations()
+    {
+        if (animator == null) return;
+
+        animator.SetBool("IsIdle", false);
+        animator.SetBool("IsWalking", false);
+        animator.SetBool("IsRunning", false);
+    }
+
+
+    private void PlayIdleAnimation()
+    {
+        if (animator == null) return;
+        ResetMovementAnimations();
+        animator.SetBool("IsIdle", true);
+    }
+
+    private void PlayWalkAnimation()
+    {
+        if (animator == null) return;
+        ResetMovementAnimations();
+        animator.SetBool("IsWalking", true);
+    }
+
+    private void PlayRunAnimation()
+    {
+        if (animator == null) return;
+        ResetMovementAnimations();
+        animator.SetBool("IsRunning", true);
+    }
+
+    private void PlayBasicAttackAnimation()
+    {
+        if (animator == null) return;
+        ResetMovementAnimations();
+        animator.SetTrigger("BasicAttack");
+    }
+
+    private void PlayBulletSprayAnimation()
+    {
+        if (animator == null) return;
+        ResetMovementAnimations();
+        animator.SetTrigger("TakeOff");
+    }
+
+    private void PlayBulletHellAnimation()
+    {
+        if (animator == null) return;
+        ResetMovementAnimations();
+        animator.SetTrigger("BulletHell");
+    }
+
 }
