@@ -17,6 +17,22 @@ public class BulletSpray : NetworkBehaviour
     private bool running = false; // flag to track if spray sequence is active
     private BossAI bossAI;
 
+    [Header("Audio")]
+    public AudioSource audioSource;
+    public AudioClip shotClip;
+
+    private void Awake()
+    {
+        if (audioSource == null)
+            audioSource = GetComponent<AudioSource>();
+    }
+
+    private void PlayShotSound()
+    {
+        if (audioSource == null || shotClip == null) return;
+        audioSource.PlayOneShot(shotClip);
+    }
+
     public void Initialize(BossAI boss)
     {
         bossAI = boss;
@@ -31,14 +47,23 @@ public class BulletSpray : NetworkBehaviour
     // entry point to start the spray attack
     public void StartSpray()
     {
-        if (!running) // only start if not already active
+        if (!running)
+        {
+            // mark as start
+            running = true;
+
+            if (bossAI != null)
+            {
+                bossAI.SetBulletSprayFinished(false);
+            }
+
             StartCoroutine(SpraySequence());
+        }
     }
 
     // coroutine that controls the spray attack over time
     private IEnumerator SpraySequence()
     {
-        running = true; // mark as active
         float endTime = Time.time + duration; // calculate when to stop
 
         // keep spawning bullets until duration expires
@@ -49,8 +74,10 @@ public class BulletSpray : NetworkBehaviour
         }
 
         running = false; // mark as finished
+
         if (bossAI != null)
         {
+            bossAI.SetBulletSprayFinished(true);
             bossAI.EndAttack();
         }
     }
@@ -91,5 +118,8 @@ public class BulletSpray : NetworkBehaviour
         {
             bulletScript.damage = damage;
         }
+
+        PlayShotSound();
+
     }
 }

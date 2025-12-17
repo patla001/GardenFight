@@ -15,6 +15,12 @@ public class LaserAttack : MonoBehaviour
     public float laserVisibleTime = 0.5f;// how long the laser remains visible after firing
     private BossAI bossAI;
 
+    [Header("Explosion")]
+    public GameObject explosionPrefab;
+    public AudioClip explosionSound;
+
+
+
     public void Initialize(BossAI boss)
     {
         bossAI = boss;
@@ -81,9 +87,22 @@ public class LaserAttack : MonoBehaviour
         // damage phase: keep laser visible for a short time after firing
         yield return new WaitForSeconds(laserVisibleTime);
 
-        Destroy(root); // destroys child visual as well
-        if (bossAI != null)
+        Vector3 explosionPos = root.transform.position + root.transform.forward * laserLength;
+
+        if (explosionPrefab != null)
         {
+            Instantiate(explosionPrefab, explosionPos, root.transform.rotation);
+        }
+
+        if (explosionSound != null)
+        {
+            AudioSource.PlayClipAtPoint(explosionSound, explosionPos);
+        }
+
+        Destroy(root); // destroys child visual as well
+        if (bossAI != null && bossAI.IsCurrentAttackLaser())
+        {
+            bossAI.SetLaserActive(false); //Allows movement again
             bossAI.EndAttack();
         }
     }

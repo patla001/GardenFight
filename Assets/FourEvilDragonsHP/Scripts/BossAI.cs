@@ -5,6 +5,11 @@ using System.Collections; // ✅ Needed for IEnumerator-based melee timing
 
 public class BossAI : NetworkBehaviour
 {
+    [Header("Movement Speeds")]
+    public float walkSpeed = 3.5f;
+    public float runSpeed = 7f;
+    public float runDistance = 10f; // distance where boss starts running
+
     [Header("References")]
     public Transform player;          // reference to the player the boss will target
     public BulletHell bulletHell;     // ring-style bullet attack
@@ -39,6 +44,54 @@ public class BossAI : NetworkBehaviour
     private enum BossState { Idle, Roam, Chase, Attack }
     private BossState state = BossState.Idle;
 
+    private bool hasTakenOff = false;
+    private bool bulletHellScreamPlayed = false;
+
+
+    [Header("Bullet Hell Audio")]
+    public AudioSource audioSource;
+    public AudioClip bulletHellScreamClip;
+
+    [Header("Landing Audio")]
+    public AudioClip landingClip;
+
+
+
+    private void Awake()
+    {
+        if (audioSource == null)
+            audioSource = GetComponent<AudioSource>();
+
+    }
+
+    [ClientRpc]
+    private void RpcPlayBulletHellScream()
+    {
+        Debug.Log("CLIENT: RpcPlayBulletHellScream received");
+
+        if (audioSource == null)
+        {
+            Debug.LogError("CLIENT: AudioSource is NULL");
+            return;
+        }
+
+        if (bulletHellScreamClip == null)
+        {
+            Debug.LogError("CLIENT: Scream clip is NULL");
+            return;
+        }
+
+        audioSource.PlayOneShot(bulletHellScreamClip);
+    }
+    public void RpcPlayLandingSound()
+    {
+        if (audioSource == null || landingClip == null) return;
+        audioSource.PlayOneShot(landingClip);
+    }
+
+
+
+
     private BossState lastState;
     private bool isAttacking = false;
     private enum BossAttackType
@@ -59,10 +112,13 @@ public class BossAI : NetworkBehaviour
     {
         base.OnStartServer();
 
+        
+
         // auto-assign required components
         agent = GetComponent<NavMeshAgent>();
         animator = GetComponent<Animator>();
 
+        agent.speed = walkSpeed;
         // auto-assign attack scripts if not set in Inspector
         if (bulletHell == null) bulletHell = GetComponent<BulletHell>();
         if (bulletSpray == null) bulletSpray = GetComponent<BulletSpray>();
@@ -81,12 +137,17 @@ public class BossAI : NetworkBehaviour
     {
         if (!isServer) return; // only server controls AI
 
-        if (currentAttack == BossAttackType.Melee)
+        if (currentAttack == BossAttackType.Ring
+            || currentAttack == BossAttackType.Melee
+            || currentAttack == BossAttackType.Laser)
         {
-            // Lock movement completely during any attack
             agent.isStopped = true;
-            return; 
         }
+        else
+        {
+            agent.isStopped = false;
+        }
+
 
 
         // find player if not already assigned
@@ -161,8 +222,21 @@ public class BossAI : NetworkBehaviour
         // if player gets too far, return to idle
         if (distance > detectionRadius * 1.5f)
         {
+            agent.speed = walkSpeed;
             state = BossState.Idle;
             return;
+        }
+
+        // make boss run if far
+        if (distance > runDistance)
+        {
+            agent.speed = runSpeed;
+            PlayRunAnimation();
+        }
+        else
+        {
+            agent.speed = walkSpeed;
+            PlayWalkAnimation();
         }
 
         // move toward the player
@@ -175,11 +249,6 @@ public class BossAI : NetworkBehaviour
 
     private void HandleAttack(float distance)
     {
-        if (currentAttack == BossAttackType.None)
-        {
-            agent.isStopped = false;
-            agent.SetDestination(player.position);
-        }
 
         // stop moving while attacking
         //agent.SetDestination(transform.position);
@@ -187,10 +256,14 @@ public class BossAI : NetworkBehaviour
         // face the player for accuracy
         transform.LookAt(player);
 
-        if (currentAttack != BossAttackType.None)
+        if (currentAttack == BossAttackType.Ring || currentAttack == BossAttackType.Melee)
             return;
 
-   
+        // If laser (or spray) is currently active, don't start a new attack
+        if (currentAttack == BossAttackType.Laser || currentAttack == BossAttackType.Spray)
+            return;
+
+
         // check if boss is allowed to attack again
         if (Time.time - lastAttackTime >= attackCooldown)
         {
@@ -202,21 +275,23 @@ public class BossAI : NetworkBehaviour
             else
             {
                 // laser attack if it's next in rotation and off cooldown
-                if (useLaserNext && laserAttack != null && Time.time - lastLaserTime >= laserCooldown)
+                if (useLaserNext && laserAttack != null && Time.time - lastLaserTime >= laserCooldown
+                    && currentAttack == BossAttackType.None)
                 {
 
-                    agent.isStopped = true;
-                    agent.SetDestination(player.position);
+                    currentAttack = BossAttackType.Laser; 
+
+                    EnsureTakeOff();
+                    SetLaserActive(true);
 
                     laserAttack.Initialize(this);
-
                     laserAttack.FireLaser(transform.position, player.position);
-                    currentAttack = BossAttackType.Laser;
+
                     useLaserNext = false;
                     lastLaserTime = Time.time;
                     lastAttackTime = Time.time;
-                
-                   
+
+
                 }
                 // ring attack if available
                 else if (useRingNext && bulletHell != null && !bulletHell.IsRunning())
@@ -224,6 +299,14 @@ public class BossAI : NetworkBehaviour
 
                     agent.isStopped = true;
                     agent.SetDestination(player.position);
+
+                    if (!bulletHellScreamPlayed)
+                    {
+                        bulletHellScreamPlayed = true;
+                        RpcPlayBulletHellScream();
+                    }
+
+
 
                     PlayBulletHellAnimation();
                     bulletHell.Initialize(this);
@@ -237,12 +320,12 @@ public class BossAI : NetworkBehaviour
                 // spray attack as fallback
                 else if (!useRingNext && bulletSpray != null && !bulletSpray.IsRunning())
                 {
-                    agent.isStopped = true;
-                    PlayBulletSprayAnimation();
-                    bulletSpray.Initialize(this);
+                    currentAttack = BossAttackType.Spray; 
 
+                    EnsureTakeOff();
+                    bulletSpray.Initialize(this);
                     bulletSpray.StartSpray();
-                    currentAttack = BossAttackType.Spray;
+
                     useRingNext = true;
                     lastAttackTime = Time.time;
                 }
@@ -347,12 +430,50 @@ public class BossAI : NetworkBehaviour
         }
     }
 
+    public void SetBulletSprayFinished(bool value)
+    {
+        if (animator != null)
+            animator.SetBool("BulletSprayFinished", value);
+    }
+
+    public void SetLaserActive(bool value)
+    {
+        if (animator == null) return;
+
+        animator.SetBool("LaserActive", value);
+
+        if (value)
+        {
+            // flying / laser should not blend with locomotion
+            animator.SetBool("IsWalking", false);
+            animator.SetBool("IsRunning", false);
+            animator.SetBool("IsIdle", false);
+        }
+    }
+
+
+    public bool IsCurrentAttackLaser()
+    {
+        return currentAttack == BossAttackType.Laser;
+    }
+
+
     public void EndAttack()
     {
         currentAttack = BossAttackType.None;
         isAttacking = false;
+
+        hasTakenOff = false;
+
         agent.isStopped = false;
+        agent.speed = walkSpeed;     // reset to base boss speed
         agent.ResetPath();
+
+        ResetMovementAnimations();   
+        PlayWalkAnimation();
+        bulletHellScreamPlayed = false;
+
+
         state = BossState.Chase;
     }
 
@@ -365,6 +486,13 @@ public class BossAI : NetworkBehaviour
         animator.SetBool("IsRunning", false);
     }
 
+    private void EnsureTakeOff()
+    {
+        if (hasTakenOff) return;
+
+        animator.SetTrigger("TakeOff");
+        hasTakenOff = true;
+    }
 
     private void PlayIdleAnimation()
     {
@@ -394,17 +522,11 @@ public class BossAI : NetworkBehaviour
         animator.SetTrigger("BasicAttack");
     }
 
-    private void PlayBulletSprayAnimation()
-    {
-        if (animator == null) return;
-        ResetMovementAnimations();
-        animator.SetTrigger("TakeOff");
-    }
-
     private void PlayBulletHellAnimation()
     {
         if (animator == null) return;
         ResetMovementAnimations();
+        animator.SetTrigger("Scream");
         animator.SetTrigger("BulletHell");
     }
 

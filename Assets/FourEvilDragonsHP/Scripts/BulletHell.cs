@@ -36,6 +36,23 @@ public class BulletHell : MonoBehaviour
 
     private BossAI bossAI;
 
+    [Header("Audio")]
+    public AudioSource audioSource;
+    public AudioClip waveClip;
+
+    private void Awake()
+    {
+        if (audioSource == null)
+            audioSource = GetComponent<AudioSource>();
+
+    }
+    private void PlayWaveSound()
+    {
+        if (audioSource == null || waveClip == null) return;
+        audioSource.PlayOneShot(waveClip);
+    }
+
+
     public void Initialize(BossAI boss)
     {
         bossAI = boss;
@@ -81,6 +98,7 @@ public class BulletHell : MonoBehaviour
         StartCoroutine(DamageRingOverTime(middleRadius, middleWidth, ringActiveDuration));
         Destroy(innerVis, ringActiveDuration);
         Destroy(midVis, ringActiveDuration);
+        PlayWaveSound();
         yield return new WaitForSeconds(delayBetweenWaves);
 
         // Wave 2: middle ring is safe, inner + outer deal damage
@@ -90,6 +108,7 @@ public class BulletHell : MonoBehaviour
         StartCoroutine(DamageRingOverTime(outerRadius, outerWidth, ringActiveDuration));
         Destroy(innerVis, ringActiveDuration);
         Destroy(outerVis, ringActiveDuration);
+        PlayWaveSound();
         yield return new WaitForSeconds(delayBetweenWaves);
 
         // Wave 3: inner ring is safe, middle + outer deal damage
@@ -99,6 +118,7 @@ public class BulletHell : MonoBehaviour
         StartCoroutine(DamageRingOverTime(outerRadius, outerWidth, ringActiveDuration));
         Destroy(midVis, ringActiveDuration);
         Destroy(outerVis, ringActiveDuration);
+        PlayWaveSound();
         yield return new WaitForSeconds(delayBetweenWaves);
 
         running = false; // sequence finished
