@@ -53,6 +53,13 @@ public class BackgroundDragonFlight : MonoBehaviour
     private float bobbingTimer = 0f;
     private bool isInitialized = false;
     
+    /// <summary>
+    /// Set this to true before Start() runs to prevent auto-initialization
+    /// Used by DragonSpawner to control initialization timing
+    /// </summary>
+    [HideInInspector]
+    public bool spawnedBySpawner = false;
+    
     public enum FlightPattern
     {
         Circle,
@@ -63,25 +70,30 @@ public class BackgroundDragonFlight : MonoBehaviour
     
     void Start()
     {
-        if (!isInitialized)
+        // Skip auto-initialization if spawned by DragonSpawner (it will initialize us)
+        if (!isInitialized && !spawnedBySpawner)
         {
             Initialize(transform.position);
         }
     }
     
     /// <summary>
-    /// Initialize the dragon flight with a specific center point
+    /// Initialize the dragon flight with a specific center point and starting angle
     /// Call this after setting flight parameters if spawning dynamically
     /// </summary>
-    public void Initialize(Vector3 center)
+    public void Initialize(Vector3 center, float startingAngle = -1f)
     {
         animator = GetComponent<Animator>();
         
         // Store the center for circular paths
         centerPoint = center;
         
-        // Set initial position on the flight path (only randomize angle once)
-        if (!isInitialized)
+        // Set initial angle (use provided angle or randomize)
+        if (startingAngle >= 0f)
+        {
+            angle = startingAngle;
+        }
+        else if (!isInitialized)
         {
             angle = Random.Range(0f, Mathf.PI * 2f);
         }
@@ -124,6 +136,16 @@ public class BackgroundDragonFlight : MonoBehaviour
             AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
             if (!stateInfo.IsName(flyAnimationName))
             {
+                // Reset any triggers that might cause unwanted animations
+                animator.ResetTrigger("Attack");
+                animator.ResetTrigger("MeleeAttack");
+                animator.ResetTrigger("Die");
+                animator.ResetTrigger("GetHit");
+                animator.ResetTrigger("Land");
+                animator.ResetTrigger("TakeOff");
+                animator.ResetTrigger("Scream");
+                
+                // Force back to flying
                 animator.Play(flyAnimationName, 0, 0f);
             }
         }

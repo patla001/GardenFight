@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.AI;
 
 /// <summary>
 /// Spawns multiple dragons flying in the background automatically
@@ -76,8 +77,16 @@ public class DragonSpawner : MonoBehaviour
             float speed = Random.Range(minSpeed, maxSpeed);
             float scale = Random.Range(minScale, maxScale);
             
-            // Create the dragon (Initialize will position it correctly on the flight path)
-            GameObject dragon = Instantiate(prefab, arenaCenter, Quaternion.identity, transform);
+            // Calculate starting position on the flight path (not at center!)
+            float startAngle = Random.Range(0f, Mathf.PI * 2f);
+            Vector3 startPosition = new Vector3(
+                arenaCenter.x + Mathf.Cos(startAngle) * radius,
+                height,
+                arenaCenter.z + Mathf.Sin(startAngle) * radius
+            );
+            
+            // Create the dragon directly on its flight path (not at arena center)
+            GameObject dragon = Instantiate(prefab, startPosition, Quaternion.identity, transform);
             dragon.name = $"FlyingDragon_{i + 1}_{prefab.name}";
             
             // Scale the dragon
@@ -89,6 +98,9 @@ public class DragonSpawner : MonoBehaviour
             {
                 flight = dragon.AddComponent<BackgroundDragonFlight>();
             }
+            
+            // Mark as spawned by spawner to prevent auto-initialization in Start()
+            flight.spawnedBySpawner = true;
             
             // Configure flight settings BEFORE initializing
             flight.flightPattern = patterns[i % patterns.Length];
@@ -103,13 +115,80 @@ public class DragonSpawner : MonoBehaviour
             flight.bobbingAmount = 0.5f;
             flight.bobbingSpeed = 1f;
             
-            // Initialize the flight path with arena center
-            flight.Initialize(arenaCenter);
+            // Initialize the flight path with arena center and the pre-calculated starting angle
+            flight.Initialize(arenaCenter, startAngle);
+            
+            // Disable any AI, combat, or other scripts that might interfere with flying
+            DisableNonFlightComponents(dragon);
             
             Debug.Log($"Spawned {dragon.name} - Pattern: {flight.flightPattern}, Radius: {radius:F1}, Height: {height:F1}, Speed: {speed:F1}");
         }
         
         Debug.Log($"DragonSpawner: Spawned {numberOfDragons} dragons!");
+    }
+    
+    /// <summary>
+    /// Disables AI, combat, physics, and other components that would interfere with background flying
+    /// </summary>
+    void DisableNonFlightComponents(GameObject dragon)
+    {
+        // Disable any AI scripts
+        var bossAI = dragon.GetComponent<BossAI>();
+        if (bossAI != null) bossAI.enabled = false;
+        
+        // Disable health (background dragons shouldn't be damageable)
+        var bossHealth = dragon.GetComponent<BossHealth>();
+        if (bossHealth != null) bossHealth.enabled = false;
+        
+        // Disable NavMeshAgent (we control movement via BackgroundDragonFlight)
+        var navAgent = dragon.GetComponent<NavMeshAgent>();
+        if (navAgent != null) navAgent.enabled = false;
+        
+        // Disable any Rigidbody physics
+        var rb = dragon.GetComponent<Rigidbody>();
+        if (rb != null)
+        {
+            rb.isKinematic = true;
+            rb.useGravity = false;
+        }
+        
+        // Disable colliders so they don't interfere with gameplay
+        var colliders = dragon.GetComponentsInChildren<Collider>();
+        foreach (var col in colliders)
+        {
+            col.enabled = false;
+        }
+        
+        // Disable any attack scripts that might exist
+        var bulletHell = dragon.GetComponent<BulletHell>();
+        if (bulletHell != null) bulletHell.enabled = false;
+        
+        var bulletSpray = dragon.GetComponent<BulletSpray>();
+        if (bulletSpray != null) bulletSpray.enabled = false;
+        
+        var laserAttack = dragon.GetComponent<LaserAttack>();
+        if (laserAttack != null) laserAttack.enabled = false;
+        
+        // Reset animator to clean state and force fly animation
+        var animator = dragon.GetComponent<Animator>();
+        if (animator != null)
+        {
+            // Reset all triggers that might cause other animations
+            animator.ResetTrigger("Attack");
+            animator.ResetTrigger("MeleeAttack");
+            animator.ResetTrigger("Die");
+            animator.ResetTrigger("GetHit");
+            animator.ResetTrigger("Land");
+            animator.ResetTrigger("TakeOff");
+            
+            // Set any common bool parameters to false
+            animator.SetBool("IsGrounded", false);
+            animator.SetBool("IsAttacking", false);
+            animator.SetBool("IsDead", false);
+            
+            // Force the fly animation immediately
+            animator.Play("Fly Forward", 0, 0f);
+        }
     }
     
     // Visualize the flight area in the editor
