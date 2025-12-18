@@ -168,15 +168,15 @@ Garden Fight is a game built upon Fight, a 3d multiplayer combat arena game, but
 - Implement bullet spam attack
 - Implement laser attack
 - Implement player damage taken from boss from attacks
-- Separate difficulties from the boss
+- Manage and implement health system for player and boss
 - Implement boss phases
 - Update README and "story"/theme
 
 **Evan Tardiff**
 - Manage human controlled player mechanics
 - Manage simple boss attack mechanics
-- Handle boss animation
-- Change the main menu from "Host" and "Join" options to just a "Play" option
+- Change the main menu from "Host" and "Join" options to just a "Play" option as well as "Respawn" mechanic
+
 
 **Ezer Patlan**
 - Port Fight from Unity 2019.1.8f1 to Unity 6000.2.2f1 (Unity 6.2) with modern networking
@@ -188,4 +188,5 @@ Garden Fight is a game built upon Fight, a 3d multiplayer combat arena game, but
 - Manage and implement health system for player and boss
 - Manage damage system for player and boss
 - Manage damage animations for player and boss
+- Manage boss animations
 
